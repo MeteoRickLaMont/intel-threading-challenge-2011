@@ -1,0 +1,34 @@
+Try fixed-sized life boards
+Install TBB concurrent_priority_queue
+Test multithreaded.
+Evaluate Closed Set.
+May get better performance with aligned fCells array, especially SSE
+Flag for greedy vs. optimal. Flesh out optimal incumbent.
+Also implement beam search. See ../square/psyho.cpp
+    Always search the same generation
+    A move is a direction and pointer to parent board
+    Score moves and keep the best N
+    Apply best moves to current beam to generate next beam
+SSE for 128 cells at a time
+Compare against jmfernandez and my own submission
+Tune solution
+Publish on github
+
+Done:
+Implement A* algorithm.
+Download contest problems
+    Done: 01*.txt through 10*.txt in this directory
+Download results
+    Winners were VoVanx86 (optimal), kivyakin (optimal) and jmfernandez (fast)
+Download source code if still available
+    jmfernandez solution in this directory
+Find dev platform with gcc and multiple cores:
+    dotc.pairserver.com has 24 cores
+    BenchLCE2 has 32
+Scoring:
+    50 points for submitting an entry
+    50 points if it compiled, ran, and solved the sample problem
+    25 points for posting 5 comments in the forums
+    5 points each for finding the optimal path on a problem
+    5/rank points each for fastest solutions (5, 2.5, 1.667, etc.)
+    225 perfect score if both fastest and optimal on each problem
