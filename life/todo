@@ -1,9 +1,11 @@
-Try fixed-sized life boards
-Install TBB concurrent_priority_queue
-Test multithreaded.
+Benchmark with multiple runs, disregarding high and low.
+TBB scalable allocator
+Static vs dynamic libstdc++
+Parse file and start threads in parallel.
+Flesh out optimal incumbent.
+Optimal main thread to groom back of priority queue.
 Evaluate Closed Set.
 May get better performance with aligned fCells array, especially SSE
-Flag for greedy vs. optimal. Flesh out optimal incumbent.
 Also implement beam search. See ../square/psyho.cpp
     Always search the same generation
     A move is a direction and pointer to parent board
@@ -11,10 +13,12 @@ Also implement beam search. See ../square/psyho.cpp
     Apply best moves to current beam to generate next beam
 SSE for 128 cells at a time
 Compare against jmfernandez and my own submission
-Tune solution
+Tune solution, specifically the multiplier on moves vs distance
 Publish on github
 
 Done:
+Intentionally leak resources. Leak memory. No smart pointers. Don't join threads.
+Put common code in common files.
 Implement A* algorithm.
 Download contest problems
     Done: 01*.txt through 10*.txt in this directory
