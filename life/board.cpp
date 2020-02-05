@@ -1,7 +1,5 @@
-#include <fcntl.h>		// For O_RDONLY
-#include <sys/stat.h>		// For fstat()
-#include <sys/mman.h>		// For mmap()
-#include <bits/stdtr1c++.h>
+#include <cstring>		// For strlen()
+#include "scanner.h"
 #include "board.h"
 
 #ifdef STATS
@@ -46,32 +44,15 @@ Position::Position(const Position &rhs) :
 // exception for 10 integers per line will last line of the
 // file which may have fewer than 5 coordinates and the tag.
 //
-
 void Position::load(const char *const fname)
 {
     TIMER_START(tLoad);
-    int fd = open(fname, O_RDONLY);
-    if (fd < 0) {
-	perror(fname);
-	exit(-1);
-    }
+    Scanner scan(fname);
 
-    /* Get the size of the file. */
-    struct stat s;
-    int status = fstat(fd, &s);
-    int size = s.st_size;
-
-    const char *map = (char *)mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0);
-    f = map;
-    if (!f) {
-	perror(fname);
-	exit(-1);
-    }
-
-    gMaxY = getNextPos() - 1;
-    gMaxX = getNextPos() - 1;
-    gGoalY = getNextPos() - 1;
-    gGoalX = getNextPos() - 1;
+    gMaxY = scan.getNextPos() - 1;
+    gMaxX = scan.getNextPos() - 1;
+    gGoalY = scan.getNextPos() - 1;
+    gGoalX = scan.getNextPos() - 1;
 
     // Clear board
     gBoardHeight = gMaxY + 1;
@@ -82,48 +63,16 @@ void Position::load(const char *const fname)
 
     // Populate board
     tPos x, y;
-    y = getNextPos();
-    x = getNextPos();
+    y = scan.getNextPos();
+    x = scan.getNextPos();
     fIntelligentY = y - 1;
     fIntelligentX = x - 1;
     while (x != 0 || y != 0) {
 	fCells[(y - 1) * gBoardWidth + ((x - 1) / BMPSIZE)] |= 1ULL << ((x - 1) & XBMPMASK);
-	y = getNextPos();
-	x = getNextPos();
+	y = scan.getNextPos();
+	x = scan.getNextPos();
     }
-    munmap(const_cast<char *>(map), size);
     TIMER_STOP(tLoad);
-}
-
-tPos Position::getNextPos()
-{
-    uint32_t s0, s1, s2, s3;
-
-    // Anything that's not a decimal digit is a delimiter.
-    // Skip leading delimiters.
-    do
-	s0 = static_cast<uint32_t>(*f++) - '0';
-    while (s0 >= 10);
-
-    // Enter loop with s0 set to digit just read
-    tPos result = 0;
-    for (;;) {
-	s1 = static_cast<uint32_t>(*f++) - '0';
-	if (s1 >= 10)
-	    return result + s0;
-	s2 = static_cast<uint32_t>(*f++) - '0';
-	if (s2 >= 10)
-	    return result + s0 * 10 + s1;
-	s3 = static_cast<uint32_t>(*f++) - '0';
-	if (s3 >= 10)
-	    return result + s0 * 100 + s1 * 10 + s2;
-
-	result += s0 * 1000 + s1 * 100 + s2 * 10 + s3;
-	s0 = static_cast<uint32_t>(*f++) - '0';
-	if (s0 >= 10)
-	    return result;
-	result *= 10000;
-    }
 }
 
 // 
@@ -151,7 +100,7 @@ void Position::output(BoardStats *t, FILE *fp, const int dir)
 void Position::output(BoardStats *t, FILE *fp, const char *s)
 {
     TIMER_START(t->tOutput);
-    int n = strlen(s);
+    int n = std::strlen(s);
     for (int i = 0; i < n; i += 40, s += 40) {
 	fprintf(fp, "%.40s\n", s);
     }

@@ -1,6 +1,9 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#include <limits.h>		// For CHAR_BIT
+#include <string>
+#include <vector>
 #include "stopwatch.h"
 #ifdef STATS
 extern Stopwatch tLoad;
