@@ -61,19 +61,21 @@ static BoardStats gThreads[MAXTHREADS];
 static std::atomic<bool> gFound{false};	// true when solution found
 static std::atomic<int> gInFlight{0};	// number of threads working on a Position
 static timeval begin;
+static int njobs = -1;
+static float weight = 5.0;
 static int nthreads;
 static pthread_t pthreads[MAXTHREADS];
 static FILE *gFout;		// Output file
 
 struct Move {
     Move() = default;
-    Move(Position *from, int d, int s = 0) :
+    Move(Position *from, int d, float s = 0) :
 	pos(from), dir(d), score(s)
     {}
 
     Position *pos;
     int dir;
-    int score;
+    float score;
 };
 
 // concurrent_priority_queue puts the highest value first,
@@ -184,7 +186,6 @@ static void *threadsearch(void *d)
 	    if (dist == 0) {
 		if (!gFound.exchange(true)) {
 		    next->output(data, gFout, *it);
-		    fclose(gFout);
 		    print_stats();
 		    exit(0);
 		}
@@ -193,7 +194,7 @@ static void *threadsearch(void *d)
 
 	    // Otherwise, add legal moves to priority queue
 	    TIMER_START(data->tPush);
-	    gMoveQueue->push(Move(next, *it, next->length() + 5 * dist));
+	    gMoveQueue->push(Move(next, *it, next->length() + weight * dist));
 	    TIMER_STOP(data->tPush);
 	}
 	--gInFlight;
@@ -226,14 +227,28 @@ int main(int argc, char **argv)
     //
     // Parse command line. Open input and output files.
     //
-    if (argc != 3) {
-	fprintf(stderr, "Usage: %s input.txt output.txt\n", argv[0]);
+    int opt;
+    while ((opt = getopt(argc, argv, "j:x:")) != -1)
+	switch (opt) {
+	case 'j': njobs = atoi(optarg); break;
+	case 'x': weight = atof(optarg); break;
+	default:
+	    goto usage;
+	}
+
+    if (argc <= optind || argc - optind > 2) {
+usage:
+	fprintf(stderr, "Usage: %s [-j njobs] [-x weight] input.txt [output.txt]\n", argv[0]);
 	return -1;
     }
-    gFout = fopen(argv[2], "w");
-    if (!gFout) {
-	perror(argv[2]);
-	return -1;
+    if (argc - optind < 2)
+	gFout = stdout;
+    else {
+	gFout = fopen(argv[optind + 1], "w");
+	if (!gFout) {
+	    perror(argv[optind + 1]);
+	    return -1;
+	}
     }
 
     //
@@ -257,7 +272,7 @@ int main(int argc, char **argv)
     // Load initial position from input file
     //
     Position *initial = new Position();
-    initial->load(argv[1]);
+    initial->load(argv[optind]);
 
 #ifdef DEBUG
     printf("Initial position:\n");
@@ -276,7 +291,6 @@ int main(int argc, char **argv)
 	// If one is a winner, report and exit
 	if (dist == 0) {
 	    initial->output(&gMainThread, gFout, *it);
-	    fclose(gFout);
 	    print_stats();
 	    exit(0);
 	}
@@ -304,7 +318,6 @@ int main(int argc, char **argv)
     //
 #endif
     fprintf(gFout, "No solution found\n");
-    fclose(gFout);
     print_stats();
 
     return 0;
