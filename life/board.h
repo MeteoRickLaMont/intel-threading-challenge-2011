@@ -18,12 +18,8 @@ extern Stopwatch tLoad;
 // Sort cells by increasing y values. Subsort by increasing x (left to
 // right).
 //
-typedef int32_t tPos;
-typedef uint64_t tBmp;
-
-const int BMPSIZE = ((int)sizeof(tBmp) * CHAR_BIT);
-const tBmp XBMPMASK = BMPSIZE - 1;
-const tBmp XCELLMASK = ~XBMPMASK;
+using tPos = int32_t;
+using tBmp = uint64_t;
 
 struct BoardStats {
     BoardStats()
@@ -33,7 +29,8 @@ struct BoardStats {
              tPop("    Pop Queue"),
          tNextGen("    Next Gen"),
       tLegalMoves("    Legal Moves"),
-          tOutput("    Output")
+          tOutput("    Output"),
+           tPart2("    threadsearch")
 #endif
     {}
 
@@ -44,6 +41,7 @@ struct BoardStats {
     Stopwatch tNextGen;
     Stopwatch tLegalMoves;
     Stopwatch tOutput;
+    Stopwatch tPart2;
 #endif
 };
 
@@ -54,8 +52,34 @@ struct BoardStats {
 //
 class Position {
 public:
+    constexpr static int BMPSIZE = ((int)sizeof(tBmp) * CHAR_BIT);
+    constexpr static tBmp XBMPMASK = BMPSIZE - 1;
+    constexpr static tBmp XCELLMASK = ~XBMPMASK;
+
     Position();
     Position(const Position &rhs);
+    Position(tPos yintel, tPos xintel, std::vector<tBmp> &&cells) :
+	fIntelligentY(yintel - 1),
+	fIntelligentX(xintel - 1),
+	fCells(cells)
+    {}
+
+    static void setDimensions(tPos ydim, tPos xdim) {
+	gBoardHeight = ydim;
+	gMaxY = ydim - 1;
+	gMaxX = xdim - 1;
+	gBoardWidth = gMaxX / BMPSIZE + 1;
+	gRightx = gMaxX & XCELLMASK;
+	gRightmask = ~((tBmp)0) >> (BMPSIZE - (xdim & XBMPMASK));
+    }
+
+    static void setGoal(tPos ygoal, tPos xgoal) {
+	gGoalY = ygoal - 1;
+	gGoalX = xgoal - 1;
+    }
+
+    static size_t getBoardHeight() { return gBoardHeight; }
+    static size_t getBoardWidth() { return gBoardWidth; }
 
     void load(const char *const fname);
     void output(BoardStats *t, FILE *fp, const int dir);
@@ -74,9 +98,17 @@ private:
     //
     // Specific to maze of life extension
     //
-    const char *f;			// File contents while parsing
     tPos fIntelligentX, fIntelligentY;  // Current position of smart cell
     std::string fMoves;			// How it arrived here
+
+    //
+    // These parameters are common to all positions.
+    //
+    static tPos gMaxX, gMaxY, gRightx;	// Dimensions in cells
+    static size_t gBoardHeight, gBoardWidth;
+    static tBmp gRightmask;		// To clip cells to right edge
+    static tPos gGoalX, gGoalY;
+
 
     inline void ADD2(tBmp &b0, tBmp &b1, const tBmp a0, const tBmp a1) const;
     inline void ADD3(tBmp &b0, tBmp &b1,

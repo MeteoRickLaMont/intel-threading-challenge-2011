@@ -1,5 +1,4 @@
 #include <cstring>		// For strlen()
-#include "scanner.h"
 #include "board.h"
 
 #ifdef STATS
@@ -7,12 +6,12 @@ Stopwatch tLoad("Load");
 #endif
 
 //
-// File globals. These parameters are common to all positions.
+// These parameters are common to all positions.
 //
-static tPos gMaxX, gMaxY, gRightx;
-static size_t gBoardHeight, gBoardWidth;
-static tBmp gRightmask;		// To clip cells to right edge
-static tPos gGoalX, gGoalY;
+tPos Position::gMaxX, Position::gMaxY, Position::gRightx;
+size_t Position::gBoardHeight, Position::gBoardWidth;
+tBmp Position::gRightmask;
+tPos Position::gGoalX, Position::gGoalY;
 
 Position::Position()
 {
@@ -24,55 +23,6 @@ Position::Position(const Position &rhs) :
     fIntelligentY(rhs.fIntelligentY),
     fMoves(rhs.fMoves)
 {
-}
-
-//
-// Input Description: The input to the program will be from a
-// text file named on the command line of the application. The
-// first line will be two integers denoting the dimensions
-// of the grid, number of rows and number of columns. For
-// consistency and shared point of reference, the upper left
-// corner of the grid will be at the (1 1) location. The second
-// line of the file will be the coordinates of the goal grid
-// point. The third line will be the initial coordinates of the
-// intelligent cell. Remaining lines will be the coordinates of
-// the remainder of the "alive" cells in the initial state of
-// the game. Each line of the file will contain 10 integers
-// with at least one space between each. These represent
-// coordinate pairs of five alive nodes. A tag of two zeroes
-// (0 0) denotes the end of the live cell coordinates. The
-// exception for 10 integers per line will last line of the
-// file which may have fewer than 5 coordinates and the tag.
-//
-void Position::load(const char *const fname)
-{
-    TIMER_START(tLoad);
-    Scanner scan(fname);
-
-    gMaxY = scan.getNextPos() - 1;
-    gMaxX = scan.getNextPos() - 1;
-    gGoalY = scan.getNextPos() - 1;
-    gGoalX = scan.getNextPos() - 1;
-
-    // Clear board
-    gBoardHeight = gMaxY + 1;
-    gBoardWidth = gMaxX / BMPSIZE + 1;
-    gRightx = gMaxX & XCELLMASK;
-    gRightmask = ~((tBmp)0) >> (BMPSIZE - ((gMaxX + 1) & XBMPMASK));
-    fCells.resize(gBoardHeight * gBoardWidth, 0);
-
-    // Populate board
-    tPos x, y;
-    y = scan.getNextPos();
-    x = scan.getNextPos();
-    fIntelligentY = y - 1;
-    fIntelligentX = x - 1;
-    while (x != 0 || y != 0) {
-	fCells[(y - 1) * gBoardWidth + ((x - 1) / BMPSIZE)] |= 1ULL << ((x - 1) & XBMPMASK);
-	y = scan.getNextPos();
-	x = scan.getNextPos();
-    }
-    TIMER_STOP(tLoad);
 }
 
 // 

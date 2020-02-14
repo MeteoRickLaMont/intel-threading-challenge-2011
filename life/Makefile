@@ -2,17 +2,17 @@ CC=g++
 CXX=g++
 CXXFLAGS=-O3 -std=c++11 # -DSTATS
 # CXXFLAGS=-g -std=c++11 -DSTATS
-OBJS=greedy.o optimal.o nblock.o board.o
+OBJS=greedy.o optimal.o nblock.o board.o parser.o scanner.o
 LIBS=-lpthread -lstdc++ -lrt
 # LIBS=-lpthread -lasan -lstdc++ -lrt
 
 all: greedy optimal nblock
 
-greedy: greedy.o board.o
-	$(CC) $(CXXFLAGS) -o $@ greedy.o board.o -ltbb $(LIBS)
+greedy: greedy.o board.o scanner.o
+	$(CC) $(CXXFLAGS) -o $@ greedy.o board.o parser.o scanner.o -ltbb $(LIBS)
 
-optimal: optimal.o board.o
-	$(CC) $(CXXFLAGS) -o $@ optimal.o board.o -L/usr/local/lib -ltbb $(LIBS)
+optimal: optimal.o board.o scanner.o
+	$(CC) $(CXXFLAGS) -o $@ optimal.o board.o parser.o scanner.o -L/usr/local/lib -ltbb $(LIBS)
 
 nblock: nblock.o
 	$(CC) $(CXXFLAGS) -o $@ nblock.o $(LIBS)
@@ -26,3 +26,9 @@ check: greedy
 
 clean:
 	rm $(OBJS)
+
+greedy.o: stopwatch.h board.h priority_queue.h parser.h scanner.h
+optimal.o: stopwatch.h board.h priority_queue.h parser.h scanner.h
+board.o: board.h
+parser.o: board.h parser.h scanner.h
+scanner.o: scanner.h

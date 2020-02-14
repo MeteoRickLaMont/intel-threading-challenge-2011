@@ -44,6 +44,7 @@ const bool REMOVE_REPETITIONS = true;
 #include <sys/time.h>
 #include "stopwatch.h"
 #include "board.h"
+#include "parser.h"
 #include "priority_queue.h"
 
 #ifdef STATS
@@ -178,7 +179,12 @@ int main(int argc, char **argv)
     // Load initial position from input file
     //
     std::shared_ptr<Position> initial = std::make_shared<Position>();
-    initial->load(argv[1]);
+    {
+	TIMER_START(tLoad);
+	Parser parse(argv[1]);
+	initial.reset(parse.loadInitial());
+	TIMER_STOP(tLoad);
+    }
 
 #ifdef DEBUG
     printf("Initial position:\n");

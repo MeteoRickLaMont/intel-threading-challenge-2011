@@ -32,7 +32,6 @@
 // other alive cells from one generation to the next.
 //
 
-// #define SINGLETHREAD
 // #define DEBUG
 
 const int MAXTHREADS = 80;
@@ -42,18 +41,18 @@ const int MAXTHREADS = 80;
 #include <unistd.h>
 #include "stopwatch.h"
 #include "board.h"
+#include "parser.h"
 #include "priority_queue.h"
 
 #ifdef STATS
 Stopwatch tGlobal("Global Time");
 Stopwatch tSeed("Seed queue");
 Stopwatch tThread("Start threads");
+Stopwatch tPart1("main");
 #endif
 
 static BoardStats gMainThread;
-#ifndef SINGLETHREAD
 static BoardStats gThreads[MAXTHREADS];
-#endif
 
 //
 // File globals. These parameters are common to all positions.
@@ -61,10 +60,8 @@ static BoardStats gThreads[MAXTHREADS];
 static std::atomic<bool> gFound{false};	// true when solution found
 static std::atomic<int> gInFlight{0};	// number of threads working on a Position
 static timeval begin;
-static int njobs = -1;
-static float weight = 5.0;
-static int nthreads;
-static pthread_t pthreads[MAXTHREADS];
+static int nthreads = -1;
+static float weight = -1.0;
 static FILE *gFout;		// Output file
 
 struct Move {
@@ -117,13 +114,16 @@ static void print_stats()
     if (tThread.isrunning())
 	tThread.stop();
     tThread.show();
+    if (tPart1.isrunning())
+	tPart1.stop();
+    tPart1.show();
     fprintf(stderr, "Main thread examined %ld positions\n", gMainThread.npositions);
     gMainThread.tPush.show();
     gMainThread.tPop.show();
     gMainThread.tNextGen.show();
     gMainThread.tLegalMoves.show();
     gMainThread.tOutput.show();
-#ifndef SINGLETHREAD
+    gMainThread.tPart2.show();
     for (int i = 0; i < nthreads; ++i) {
 	fprintf(stderr, "Thread #%d examined %ld positions\n", i, gThreads[i].npositions);
 	gThreads[i].tPush.show();
@@ -131,8 +131,10 @@ static void print_stats()
 	gThreads[i].tNextGen.show();
 	gThreads[i].tLegalMoves.show();
 	gThreads[i].tOutput.show();
+	if (gThreads[i].tPart2.isrunning())
+	    gThreads[i].tPart2.stop();
+	gThreads[i].tPart2.show();
     }
-#endif
 #endif
 }
 
@@ -148,14 +150,17 @@ static void print_stats()
 static void *threadsearch(void *d)
 {
     BoardStats *data = (BoardStats *)d;
+    TIMER_START(data->tPart2);
     Move move;
     for (;;) {
 	// Choose best available move from priority queue
 	TIMER_START(data->tPop);
 	if (!gMoveQueue->try_pop(move)) {
 	    TIMER_STOP(data->tPop);
-	    if (gInFlight == 0)
+	    if (gInFlight == 0) {
+		TIMER_STOP(data->tPart2);
 		return NULL;
+	    }
 	    else
 		continue;
 	}
@@ -186,6 +191,7 @@ static void *threadsearch(void *d)
 	    if (dist == 0) {
 		if (!gFound.exchange(true)) {
 		    next->output(data, gFout, *it);
+		    TIMER_STOP(data->tPart2);
 		    print_stats();
 		    exit(0);
 		}
@@ -200,29 +206,15 @@ static void *threadsearch(void *d)
 	--gInFlight;
     }
 
+    TIMER_STOP(data->tPart2);
     return NULL;
 }
-
-#ifndef SINGLETHREAD
-static void *startthreads(void *d)
-{
-    TIMER_START(tThread);
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    for (int i = 1; i < nthreads; ++i)
-	if (pthread_create(pthreads + i, &attr, threadsearch, (void *)(gThreads + i)) != 0)
-	    fprintf(stderr, "failed to create thread\n");
-    TIMER_STOP(tThread);
-
-    return threadsearch(d);
-}
-#endif
 
 int main(int argc, char **argv)
 {
     gettimeofday(&begin, 0);
     TIMER_START(tGlobal);
+    TIMER_START(tPart1);
 
     //
     // Parse command line. Open input and output files.
@@ -230,7 +222,7 @@ int main(int argc, char **argv)
     int opt;
     while ((opt = getopt(argc, argv, "j:x:")) != -1)
 	switch (opt) {
-	case 'j': njobs = atoi(optarg); break;
+	case 'j': nthreads = atoi(optarg); break;
 	case 'x': weight = atof(optarg); break;
 	default:
 	    goto usage;
@@ -252,27 +244,40 @@ usage:
     }
 
     //
-    // Start one thread. It will start the others.
-    //
-    ++gInFlight;	// Make sure threads don't exit until seeded
-    gMoveQueue = new priority_queue<Move, CLessScore>();
-#ifndef SINGLETHREAD
-    TIMER_START(tThread);
-    nthreads = sysconf(_SC_NPROCESSORS_CONF);
-    if (nthreads > MAXTHREADS) nthreads = MAXTHREADS;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    if (pthread_create(pthreads, &attr, startthreads, (void *)gThreads) != 0)
-	fprintf(stderr, "failed to create thread\n");
-    TIMER_STOP(tThread);
-#endif
-
-    //
     // Load initial position from input file
     //
-    Position *initial = new Position();
-    initial->load(argv[optind]);
+    Position *initial;
+    {
+	Parser parse(argv[optind]);
+
+	//
+	// Decide number of threads
+	//
+	size_t ncells = parse.getTotalCells();
+	if (nthreads < 0) {
+	    if (ncells < 10000)
+		nthreads = 0;
+	    else if (ncells < 250000)
+		nthreads = 3;
+	    else
+		nthreads = sysconf(_SC_NPROCESSORS_CONF) - 1; // -1 for main thread
+	    if (nthreads > MAXTHREADS) nthreads = MAXTHREADS;
+	}
+
+	//
+	// Decide heuristic weight
+	//
+	if (weight < 0) {
+	    if (ncells < 10000)
+		weight = 5.0;
+	    else
+		weight = 10.0;
+	}
+
+	TIMER_START(tLoad);
+	initial = parse.loadInitial();
+	TIMER_STOP(tLoad);
+    }
 
 #ifdef DEBUG
     printf("Initial position:\n");
@@ -283,6 +288,7 @@ usage:
     // Seed priority queue with legal moves from initial position.
     //
     TIMER_START(tSeed);
+    gMoveQueue = new priority_queue<Move, CLessScore>();
     std::vector<int> dirs = initial->legalMoves(&gMainThread);
     for (auto it = dirs.begin(); it != dirs.end(); ++it) {
 	// Score legal moves
@@ -301,22 +307,44 @@ usage:
 	TIMER_STOP(gMainThread.tPush);
     }
     TIMER_STOP(tSeed);
-    --gInFlight;
 
-#ifdef SINGLETHREAD
-    threadsearch(&gMainThread);
-#else
-    //
-    // Wait for all threads to exit
-    //
-    pthread_attr_destroy(&attr);
-    for (int i = 0; i < nthreads; ++i)
-	pthread_join(pthreads[i], NULL);
+    if (nthreads == 0) {
+	TIMER_STOP(tPart1);
+	threadsearch(&gMainThread);
+	TIMER_START(tPart1);
+    }
+    else {
+	//
+	// Start threads
+	//
+	pthread_t pthreads[MAXTHREADS];
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	TIMER_START(tThread);
+	int i;
+	for (i = 0; i < nthreads; ++i)
+	    if (pthread_create(pthreads + i, &attr, threadsearch, (void *)(gThreads + i)) != 0)
+		fprintf(stderr, "failed to create thread\n");
+	TIMER_STOP(tThread);
+	pthread_attr_destroy(&attr);
+
+	//
+	// I am the last thread
+	//
+	TIMER_STOP(tPart1);
+	threadsearch(&gMainThread);
+
+	//
+	// Wait for all threads to exit
+	//
+	for (i = 0; i < nthreads; ++i)
+	    pthread_join(pthreads[i], NULL);
+    }
 
     //
     // If all threads exited normally then no solution was found.
     //
-#endif
     fprintf(gFout, "No solution found\n");
     print_stats();
 
