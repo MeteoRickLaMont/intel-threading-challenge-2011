@@ -109,12 +109,50 @@ private:
     static tBmp gRightmask;		// To clip cells to right edge
     static tPos gGoalX, gGoalY;
 
+    //
+    // Add one bit values in parallel.
+    // a0 and a1 are packed vectors of bits.
+    // Calculate b = a0 + a1
+    // Because it takes two bits to represent 1 + 1, let b0 be the lsb
+    // of the sum and b1 the msb.
+    //
+    inline void ADD2(tBmp &b0, tBmp &b1, const tBmp a0, const tBmp a1) const
+    {
+	b1 = a0 & a1;
+	b0 = a0 ^ a1;
+    }
 
-    inline void ADD2(tBmp &b0, tBmp &b1, const tBmp a0, const tBmp a1) const;
+    //
+    // Add one bit values in parallel.
+    // a0, a1 and a2 are packed vectors of bits.
+    // Calculate b = a0 + a1 + a2
+    // Because it takes two bits to represent 2 or 3, let b0 be the lsb
+    // of the sum and b1 the msb.
+    //
     inline void ADD3(tBmp &b0, tBmp &b1,
-	const tBmp a0, const tBmp a1, const tBmp a2) const;
-    inline tBmp ROL(const tBmp a0, const tBmp a1) const;
-    inline tBmp ROR(const tBmp a0, const tBmp a1) const;
+	const tBmp a0, const tBmp a1, const tBmp a2) const
+    {
+	tBmp t0, t1;
+	ADD2(b0, t0, a0, a1);
+	ADD2(b0, t1, b0, a2);
+	b1 = t0 | t1;
+    }
+
+    //
+    // Shift a0 one bit to the left, rotating in the msb of a1 from the right.
+    //
+    inline tBmp ROL(const tBmp a0, const tBmp a1) const
+    {
+	return a0 << 1 | a1 >> BMPSIZE-1;
+    }
+
+    //
+    // Shift a0 one bit to the right, rotating in the lsb of a1 from the left.
+    //
+    inline tBmp ROR(const tBmp a0, const tBmp a1) const
+    {
+	return a0 >> 1 | a1 << BMPSIZE-1;
+    }
 
     // inline void scanCoords(const char *&f, tPos &y, tPos &x) const;
     tPos getNextPos();

@@ -39,10 +39,20 @@ const int MAXTHREADS = 80;
 #include <bits/stdtr1c++.h>
 #include <sys/time.h>		// For gettimeofday()
 #include <unistd.h>
+#include <new>
 #include "stopwatch.h"
 #include "board.h"
 #include "parser.h"
 #include "priority_queue.h"
+
+#ifdef __cpp_lib_hardware_interference_size
+    using std::hardware_constructive_interference_size;
+    using std::hardware_destructive_interference_size;
+#else
+    // 64 bytes on x86-64 │ L1_CACHE_BYTES │ L1_CACHE_SHIFT │ __cacheline_aligned │ ...
+    constexpr std::size_t hardware_constructive_interference_size = 64;
+    constexpr std::size_t hardware_destructive_interference_size = 64;
+#endif
 
 #ifdef STATS
 Stopwatch tGlobal("Global Time");
@@ -51,12 +61,17 @@ Stopwatch tThread("Start threads");
 Stopwatch tPart1("main");
 #endif
 
-static BoardStats gMainThread;
-static BoardStats gThreads[MAXTHREADS];
-
 //
 // File globals. These parameters are common to all positions.
 //
+static BoardStats gMainThread;
+static BoardStats gThreads[MAXTHREADS];
+struct aligned_pthread_t {
+    alignas(hardware_destructive_interference_size) pthread_t t;
+};
+static aligned_pthread_t pthreads[MAXTHREADS];
+static pthread_attr_t pthreadattr;
+
 static std::atomic<bool> gFound{false};	// true when solution found
 static std::atomic<int> gInFlight{0};	// number of threads working on a Position
 static timeval begin;
@@ -85,7 +100,7 @@ struct CLessScore {
 
 // Make this a pointer so that it won't be destructed when one thread
 // calls exit(). Otherwise, the other threads that are still working
-// could have memory errors.
+// could have memory errors during program shutdown.
 priority_queue<Move, CLessScore> *gMoveQueue;
 
 inline double elapsed(timeval &then)
@@ -155,18 +170,16 @@ static void *threadsearch(void *d)
     for (;;) {
 	// Choose best available move from priority queue
 	TIMER_START(data->tPop);
-	if (!gMoveQueue->try_pop(move)) {
+	if (gMoveQueue->try_pop(move)) {
 	    TIMER_STOP(data->tPop);
-	    if (gInFlight == 0) {
-		TIMER_STOP(data->tPart2);
-		return NULL;
-	    }
-	    else
-		continue;
+	    ++gInFlight;
 	}
 	else {
 	    TIMER_STOP(data->tPop);
-	    ++gInFlight;
+	    if (gInFlight)
+		continue;
+	    TIMER_STOP(data->tPart2);
+	    return NULL;
 	}
 #ifdef STATS
 	++data->npositions;
@@ -189,13 +202,12 @@ static void *threadsearch(void *d)
 
 	    // If one is a winner, report and exit
 	    if (dist == 0) {
-		if (!gFound.exchange(true)) {
-		    next->output(data, gFout, *it);
-		    TIMER_STOP(data->tPart2);
-		    print_stats();
-		    exit(0);
-		}
-		return NULL;
+		if (gFound.exchange(true))
+		    return NULL;	// Already another winner
+		next->output(data, gFout, *it);
+		TIMER_STOP(data->tPart2);
+		print_stats();
+		exit(0);
 	    }
 
 	    // Otherwise, add legal moves to priority queue
@@ -208,6 +220,20 @@ static void *threadsearch(void *d)
 
     TIMER_STOP(data->tPart2);
     return NULL;
+}
+
+//
+// Start threads
+//
+static void *startthreads(void *d)
+{
+    TIMER_START(tThread);
+    for (int i = 1; i < nthreads; ++i)
+	pthread_create(&pthreads[i].t, &pthreadattr,
+	    threadsearch, (void *)(gThreads + i));
+    TIMER_STOP(tThread);
+    pthread_attr_destroy(&pthreadattr);
+    return threadsearch(d);
 }
 
 int main(int argc, char **argv)
@@ -244,6 +270,12 @@ usage:
     }
 
     //
+    // Prepare shared data for threads when they warm up.
+    //
+    gMoveQueue = new priority_queue<Move, CLessScore>();
+    ++gInFlight;	// Main thread while generating seed positions
+
+    //
     // Load initial position from input file
     //
     Position *initial;
@@ -257,21 +289,30 @@ usage:
 	if (nthreads < 0) {
 	    if (ncells < 10000)
 		nthreads = 0;
-	    else if (ncells < 250000)
-		nthreads = 3;
 	    else
-		nthreads = sysconf(_SC_NPROCESSORS_CONF) - 1; // -1 for main thread
+		nthreads = sysconf(_SC_NPROCESSORS_CONF) / 2 - 1; // Assumes hyperthreading. -1 for main thread
 	    if (nthreads > MAXTHREADS) nthreads = MAXTHREADS;
+	}
+
+	//
+	// Start one thread to start other threads
+	//
+	if (nthreads > 0)  {
+	    pthread_attr_init(&pthreadattr);
+	    pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_JOINABLE);
+	    TIMER_START(tThread);
+	    pthread_create(&pthreads[0].t, &pthreadattr,
+		startthreads, (void *)gThreads);
+	    TIMER_STOP(tThread);
 	}
 
 	//
 	// Decide heuristic weight
 	//
 	if (weight < 0) {
-	    if (ncells < 10000)
-		weight = 5.0;
-	    else
-		weight = 10.0;
+            weight = 5.0;
+	    // if (ncells > 10000)
+            //     weight = 10.2;
 	}
 
 	TIMER_START(tLoad);
@@ -288,7 +329,6 @@ usage:
     // Seed priority queue with legal moves from initial position.
     //
     TIMER_START(tSeed);
-    gMoveQueue = new priority_queue<Move, CLessScore>();
     std::vector<int> dirs = initial->legalMoves(&gMainThread);
     for (auto it = dirs.begin(); it != dirs.end(); ++it) {
 	// Score legal moves
@@ -306,41 +346,22 @@ usage:
 	gMoveQueue->push(Move(initial, *it, dist));
 	TIMER_STOP(gMainThread.tPush);
     }
+    --gInFlight;
     TIMER_STOP(tSeed);
 
-    if (nthreads == 0) {
-	TIMER_STOP(tPart1);
-	threadsearch(&gMainThread);
-	TIMER_START(tPart1);
-    }
-    else {
-	//
-	// Start threads
-	//
-	pthread_t pthreads[MAXTHREADS];
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	TIMER_START(tThread);
-	int i;
-	for (i = 0; i < nthreads; ++i)
-	    if (pthread_create(pthreads + i, &attr, threadsearch, (void *)(gThreads + i)) != 0)
-		fprintf(stderr, "failed to create thread\n");
-	TIMER_STOP(tThread);
-	pthread_attr_destroy(&attr);
+    //
+    // Use main thread to search,
+    // regardless of whether nthreads > 0
+    //
+    TIMER_STOP(tPart1);
+    threadsearch(&gMainThread);
+    TIMER_START(tPart1);
 
-	//
-	// I am the last thread
-	//
-	TIMER_STOP(tPart1);
-	threadsearch(&gMainThread);
-
-	//
-	// Wait for all threads to exit
-	//
-	for (i = 0; i < nthreads; ++i)
-	    pthread_join(pthreads[i], NULL);
-    }
+    //
+    // Wait for all other threads to exit
+    //
+    for (int i = 0; i < nthreads; ++i)
+	pthread_join(pthreads[i].t, NULL);
 
     //
     // If all threads exited normally then no solution was found.

@@ -1,6 +1,6 @@
 CC=g++
 CXX=g++
-CXXFLAGS=-O3 -std=c++11 # -DSTATS
+CXXFLAGS=-O3 -std=c++11 -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free # -DSTATS
 # CXXFLAGS=-g -std=c++11 -DSTATS
 OBJS=greedy.o optimal.o nblock.o board.o parser.o scanner.o
 LIBS=-lpthread -lstdc++ -lrt
@@ -8,10 +8,10 @@ LIBS=-lpthread -lstdc++ -lrt
 
 all: greedy optimal nblock
 
-greedy: greedy.o board.o scanner.o
-	$(CC) $(CXXFLAGS) -o $@ greedy.o board.o parser.o scanner.o -ltbb $(LIBS)
+greedy: greedy.o board.o parser.o scanner.o
+	$(CC) $(CXXFLAGS) -o $@ greedy.o board.o parser.o scanner.o -ltbb -ltbbmalloc_proxy $(LIBS)
 
-optimal: optimal.o board.o scanner.o
+optimal: optimal.o board.o parser.o scanner.o
 	$(CC) $(CXXFLAGS) -o $@ optimal.o board.o parser.o scanner.o -L/usr/local/lib -ltbb $(LIBS)
 
 nblock: nblock.o

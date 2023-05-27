@@ -1,6 +1,4 @@
-TBB scalable allocator
 Static vs dynamic libstdc++
-Parse file and start threads in parallel.
 Flesh out optimal incumbent.
 Optimal main thread to groom back of priority queue.
 Evaluate Closed Set.
@@ -14,6 +12,8 @@ SSE for 128 cells at a time
 Publish on github
 
 Done:
+TBB scalable allocator
+Parse file and start threads in parallel.
 Compare against jmfernandez and my own submission
 Tune solution, specifically the multiplier on moves vs distance
 Benchmark with multiple runs, disregarding high and low.
