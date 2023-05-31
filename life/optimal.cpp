@@ -107,7 +107,7 @@ static void *threadsearch(void *d)
 #endif
 
 	// Apply move and advance board to next generation
-	auto next = std::shared_ptr<Position>(move.pos->nextgen(data, move.dir));
+	auto next = std::shared_ptr<Position>(move.pos->nextgen(*data, move.dir));
 
 #ifdef DEBUG
 	// Debugging
@@ -124,15 +124,15 @@ static void *threadsearch(void *d)
 	}
 
 	// Find legal moves
-	std::vector<int> dirs = next->legalMoves(data);
-	for (auto it = dirs.begin(); it != dirs.end(); ++it) {
+	std::string dirs = next->legalMoves(*data);
+	for (const char &c : dirs) {
 	    // Score legal moves
-	    int dist = next->distance(*it);
+	    int dist = next->distance(c);
 
 	    // If one is a winner, see if it's better than incumbent
 	    if (dist == 0 && (!gIncumbent.load() || next->length() + 1 < strlen(gIncumbent.load()))) {
 		std::string winner = next->getMoves();
-		winner.push_back('0' + *it);
+		winner.push_back(c);
 		const char *other = strdup(winner.c_str());
 		while (other && (!gIncumbent.load() || strlen(other) < strlen(gIncumbent.load()))) {
 		    fprintf(stderr, "Installing new incumbent %s\n", other);
@@ -141,7 +141,7 @@ static void *threadsearch(void *d)
 	    }
 	    else {
 		// Otherwise, add legal move to priority queue
-		gMoveQueue->push(Move(next, *it, next->length() + 3 * dist));
+		gMoveQueue->push(Move(next, c, next->length() + 3 * dist));
 	    }
 	}
     }
@@ -195,19 +195,19 @@ int main(int argc, char **argv)
     // Seed priority queue with legal moves from initial position.
     //
     gMoveQueue = new priority_queue<Move, CLessScore>();
-    std::vector<int> dirs = initial->legalMoves(&gMainThread);
-    for (auto it = dirs.begin(); it != dirs.end(); ++it) {
+    std::string dirs = initial->legalMoves(gMainThread);
+    for (const char &c : dirs) {
 	// Score legal moves
-	int dist = initial->distance(*it);
+	int dist = initial->distance(c);
 
 	// If one is a winner, report and exit
 	if (dist == 0) {
-	    initial->output(&gMainThread, gFout, *it);
+	    initial->output(gMainThread, gFout, c);
 	    fclose(gFout);
 	}
 
 	// Otherwise, add legal moves to priority queue
-	gMoveQueue->push(Move(initial, *it, dist));
+	gMoveQueue->push(Move(initial, c, dist));
     }
 
 #ifdef SINGLETHREAD
@@ -236,7 +236,7 @@ int main(int argc, char **argv)
 #endif
 
     if (gIncumbent.load())
-	Position::output(&gMainThread, gFout, gIncumbent.load());
+	Position::output(gMainThread, gFout, gIncumbent.load());
     else
 	fprintf(gFout, "No solution found\n");
     fclose(gFout);

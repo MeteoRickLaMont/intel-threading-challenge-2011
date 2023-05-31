@@ -1,6 +1,6 @@
 CC=g++
 CXX=g++
-CXXFLAGS=-O3 -std=c++11 -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free # -DSTATS
+CXXFLAGS=-O3 -std=c++11 -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free # -DSTATS -DSINGLETHREAD -DDEBUG
 # CXXFLAGS=-g -std=c++11 -DSTATS
 OBJS=greedy.o optimal.o nblock.o board.o parser.o scanner.o
 LIBS=-lpthread -lstdc++ -lrt

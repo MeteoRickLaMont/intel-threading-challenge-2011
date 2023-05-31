@@ -1,7 +1,12 @@
+Benchmark on benchlce6
+For singlethreaded, see if priority_queue is faster than concurrent_priority_queue
+    If so, create correct one an runtime based on nthreads
+Read more about TBB allocators
 Static vs dynamic libstdc++
 Flesh out optimal incumbent.
 Optimal main thread to groom back of priority queue.
 Evaluate Closed Set.
+Figure out best way to install TBB
 May get better performance with aligned fCells array, especially SSE
 Also implement beam search. See ../square/psyho.cpp
     Always search the same generation
@@ -12,6 +17,8 @@ SSE for 128 cells at a time
 Publish on github
 
 Done:
+Have legalMoves return a std::string of '0', '4', etc.
+Use lookup table for deltax, deltay in distance and nextgen
 TBB scalable allocator
 Parse file and start threads in parallel.
 Compare against jmfernandez and my own submission

@@ -56,8 +56,14 @@ public:
     constexpr static tBmp XBMPMASK = BMPSIZE - 1;
     constexpr static tBmp XCELLMASK = ~XBMPMASK;
 
-    Position();
-    Position(const Position &rhs);
+    Position()
+    {}
+    Position(const Position &rhs) :
+        fCells(rhs.fCells),
+        fIntelligentX(rhs.fIntelligentX),
+        fIntelligentY(rhs.fIntelligentY),
+        fMoves(rhs.fMoves)
+    {}
     Position(tPos yintel, tPos xintel, std::vector<tBmp> &&cells) :
 	fIntelligentY(yintel - 1),
 	fIntelligentX(xintel - 1),
@@ -81,16 +87,17 @@ public:
     static size_t getBoardHeight() { return gBoardHeight; }
     static size_t getBoardWidth() { return gBoardWidth; }
 
-    void load(const char *const fname);
-    void output(BoardStats *t, FILE *fp, const int dir);
-    static void output(BoardStats *t, FILE *fp, const char *s);
+    void output(BoardStats &t, FILE *fp, const char dir);
+    static void output(BoardStats &t, FILE *fp, std::string &&s);
+#ifdef DEBUG
     void print();
+#endif
 
-    Position *nextgen(BoardStats *t, const int dir);
-    std::vector<int> legalMoves(BoardStats *t) const;
+    Position *nextgen(BoardStats &t, const char dir);
+    std::string legalMoves(BoardStats &t) const;
     std::string getMoves() const { return fMoves; }
     uint32_t length() const { return fMoves.length(); }
-    uint32_t distance(const int dir) const;
+    uint32_t distance(const char dir) const;
 
 private:
     std::vector<tBmp> fCells;		// Game of Life board
@@ -98,6 +105,7 @@ private:
     //
     // Specific to maze of life extension
     //
+    static std::pair<int, int> fDelta[];// Map direction to delta x and delta y
     tPos fIntelligentX, fIntelligentY;  // Current position of smart cell
     std::string fMoves;			// How it arrived here
 
@@ -154,9 +162,10 @@ private:
 	return a0 >> 1 | a1 << BMPSIZE-1;
     }
 
-    // inline void scanCoords(const char *&f, tPos &y, tPos &x) const;
     tPos getNextPos();
+#ifdef DEBUG
     void printFilledColumn(tPos x, tPos y, tBmp b) const;
+#endif
 };
 
 #endif
