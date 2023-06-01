@@ -1,7 +1,7 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include <limits.h>		// For CHAR_BIT
+#include <limits.h>            // For CHAR_BIT
 #include <string>
 #include <vector>
 #include "stopwatch.h"
@@ -65,30 +65,30 @@ public:
         fMoves(rhs.fMoves)
     {}
     Position(tPos yintel, tPos xintel, std::vector<tBmp> &&cells) :
-	fIntelligentY(yintel - 1),
-	fIntelligentX(xintel - 1),
-	fCells(cells)
+        fIntelligentY(yintel - 1),
+        fIntelligentX(xintel - 1),
+        fCells(cells)
     {}
 
     static void setDimensions(tPos ydim, tPos xdim) {
-	gBoardHeight = ydim;
-	gMaxY = ydim - 1;
-	gMaxX = xdim - 1;
-	gBoardWidth = gMaxX / BMPSIZE + 1;
-	gRightx = gMaxX & XCELLMASK;
-	gRightmask = ~((tBmp)0) >> (BMPSIZE - (xdim & XBMPMASK));
+        gBoardHeight = ydim;
+        gMaxY = ydim - 1;
+        gMaxX = xdim - 1;
+        gBoardWidth = gMaxX / BMPSIZE + 1;
+        gRightx = gMaxX & XCELLMASK;
+        gRightmask = ~((tBmp)0) >> (BMPSIZE - (xdim & XBMPMASK));
     }
 
     static void setGoal(tPos ygoal, tPos xgoal) {
-	gGoalY = ygoal - 1;
-	gGoalX = xgoal - 1;
+        gGoalY = ygoal - 1;
+        gGoalX = xgoal - 1;
     }
 
     static size_t getBoardHeight() { return gBoardHeight; }
     static size_t getBoardWidth() { return gBoardWidth; }
 
     void output(BoardStats &t, FILE *fp, const char dir);
-    static void output(BoardStats &t, FILE *fp, std::string &&s);
+    static void output(BoardStats &t, FILE *fp, int n, const char *s);
 #ifdef DEBUG
     void print();
 #endif
@@ -100,21 +100,21 @@ public:
     uint32_t distance(const char dir) const;
 
 private:
-    std::vector<tBmp> fCells;		// Game of Life board
+    std::vector<tBmp> fCells;           // Game of Life board
 
     //
     // Specific to maze of life extension
     //
     static std::pair<int, int> fDelta[];// Map direction to delta x and delta y
     tPos fIntelligentX, fIntelligentY;  // Current position of smart cell
-    std::string fMoves;			// How it arrived here
+    std::string fMoves;                 // How it arrived here
 
     //
     // These parameters are common to all positions.
     //
-    static tPos gMaxX, gMaxY, gRightx;	// Dimensions in cells
+    static tPos gMaxX, gMaxY, gRightx;  // Dimensions in cells
     static size_t gBoardHeight, gBoardWidth;
-    static tBmp gRightmask;		// To clip cells to right edge
+    static tBmp gRightmask;             // To clip cells to right edge
     static tPos gGoalX, gGoalY;
 
     //
@@ -126,8 +126,8 @@ private:
     //
     inline void ADD2(tBmp &b0, tBmp &b1, const tBmp a0, const tBmp a1) const
     {
-	b1 = a0 & a1;
-	b0 = a0 ^ a1;
+        b1 = a0 & a1;
+        b0 = a0 ^ a1;
     }
 
     //
@@ -138,12 +138,12 @@ private:
     // of the sum and b1 the msb.
     //
     inline void ADD3(tBmp &b0, tBmp &b1,
-	const tBmp a0, const tBmp a1, const tBmp a2) const
+        const tBmp a0, const tBmp a1, const tBmp a2) const
     {
-	tBmp t0, t1;
-	ADD2(b0, t0, a0, a1);
-	ADD2(b0, t1, b0, a2);
-	b1 = t0 | t1;
+        tBmp t0, t1;
+        ADD2(b0, t0, a0, a1);
+        ADD2(b0, t1, b0, a2);
+        b1 = t0 | t1;
     }
 
     //
@@ -151,7 +151,7 @@ private:
     //
     inline tBmp ROL(const tBmp a0, const tBmp a1) const
     {
-	return a0 << 1 | a1 >> BMPSIZE-1;
+        return a0 << 1 | a1 >> BMPSIZE-1;
     }
 
     //
@@ -159,7 +159,7 @@ private:
     //
     inline tBmp ROR(const tBmp a0, const tBmp a1) const
     {
-	return a0 >> 1 | a1 << BMPSIZE-1;
+        return a0 >> 1 | a1 << BMPSIZE-1;
     }
 
     tPos getNextPos();

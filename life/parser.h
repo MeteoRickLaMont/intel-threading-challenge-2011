@@ -1,7 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <cstddef>	// For size_t
+#include <cstddef>      // For size_t
 #include "scanner.h"
 
 class Position;

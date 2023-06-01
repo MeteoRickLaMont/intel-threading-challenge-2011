@@ -45,10 +45,10 @@ Position *Parser::loadInitial()
     yintel = y = ++scan;
     xintel = x = ++scan;
     while (x != 0 || y != 0) {
-	cells[(y - 1) * bwidth + ((x - 1) / Position::BMPSIZE)] |=
-	    1ULL << ((x - 1) & Position::XBMPMASK);
-	y = ++scan;
-	x = ++scan;
+        cells[(y - 1) * bwidth + ((x - 1) / Position::BMPSIZE)] |=
+            1ULL << ((x - 1) & Position::XBMPMASK);
+        y = ++scan;
+        x = ++scan;
     }
 
     return new Position(yintel, xintel, std::move(cells));

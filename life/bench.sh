@@ -12,8 +12,6 @@ NRUNS=${2:-1000}
 NTHREADS=${3:--1}
 WEIGHT=${4:--1}
 
-export LD_LIBRARY_PATH=/home/lamont/wjakob/tbb/build/
-
 #
 # For each of 10 test cases:
 #     Do 1 untimed iteration to warm up the cache

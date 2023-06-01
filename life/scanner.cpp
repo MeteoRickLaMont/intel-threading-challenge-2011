@@ -1,15 +1,15 @@
-#include <stdio.h>		// For perror
-#include <stdlib.h>		// For exit()
-#include <fcntl.h>		// For O_RDONLY
-#include <unistd.h>		// For close
-#include <sys/stat.h>		// For fstat()
+#include <stdio.h>              // For perror
+#include <stdlib.h>             // For exit()
+#include <fcntl.h>              // For O_RDONLY
+#include <unistd.h>             // For close
+#include <sys/stat.h>           // For fstat()
 #include "scanner.h"
 
 Scanner::Scanner(const char *const fname) {
     m_fd = open(fname, O_RDONLY);
     if (m_fd < 0) {
-	perror(fname);
-	exit(-1);
+        perror(fname);
+        exit(-1);
     }
 
     // Get the size of the file.
@@ -19,31 +19,31 @@ Scanner::Scanner(const char *const fname) {
 
     m_f = m_map = new char[m_size];
     if (!m_map) {
-	perror(fname);
-	exit(-1);
+        perror(fname);
+        exit(-1);
     }
 
     // Quickly dispatch usual case where entire file is read
     size_t bytes_read = read(m_fd, m_map, m_size);
     if (bytes_read >= m_size)
-	return;
+        return;
 
     // Handle errors, EOF and partial reads.
     char *p = m_map;
     size_t bytes_left = m_size;
     for (;;) {
-	if (bytes_read == static_cast<size_t>(-1)) {
-	    perror(fname);
-	    exit(-1);
-	}
-	if (bytes_read == 0)
-	    break;
+        if (bytes_read == static_cast<size_t>(-1)) {
+            perror(fname);
+            exit(-1);
+        }
+        if (bytes_read == 0)
+            break;
 
-	bytes_left -= bytes_read;
-	p += bytes_read;
-	bytes_read = read(m_fd, p, bytes_left);
-	if (bytes_read >= bytes_left)
-	    break;
+        bytes_left -= bytes_read;
+        p += bytes_read;
+        bytes_read = read(m_fd, p, bytes_left);
+        if (bytes_read >= bytes_left)
+            break;
     }
 }
 
@@ -87,7 +87,7 @@ int32_t Scanner::operator++() {
     // between any pair of numbers (maybe two on Windows for '\r\n').
     //
     do
-	s0 = static_cast<uint32_t>(*m_f++) - '0';
+        s0 = static_cast<uint32_t>(*m_f++) - '0';
     while (s0 >= 10);
 
     //
@@ -103,27 +103,27 @@ int32_t Scanner::operator++() {
     //
     int32_t result = 0;
     for (;;) {
-	s1 = static_cast<uint32_t>(*m_f++) - '0';
-	if (s1 >= 10)
-	    return result + s0;
-	s2 = static_cast<uint32_t>(*m_f++) - '0';
-	if (s2 >= 10)
-	    return result + s0 * 10 + s1;
-	s3 = static_cast<uint32_t>(*m_f++) - '0';
-	if (s3 >= 10)
-	    return result + s0 * 100 + s1 * 10 + s2;
+        s1 = static_cast<uint32_t>(*m_f++) - '0';
+        if (s1 >= 10)
+            return result + s0;
+        s2 = static_cast<uint32_t>(*m_f++) - '0';
+        if (s2 >= 10)
+            return result + s0 * 10 + s1;
+        s3 = static_cast<uint32_t>(*m_f++) - '0';
+        if (s3 >= 10)
+            return result + s0 * 100 + s1 * 10 + s2;
 
-	//
-	// Four or more additional digits in number.
-	// If exactly four return it now.
-	// Otherwise, prepare for next iteration.
-	//
-	result += s0 * 1000 + s1 * 100 + s2 * 10 + s3;
-	s0 = static_cast<uint32_t>(*m_f++) - '0';
-	if (s0 >= 10)
-	    return result;
+        //
+        // Four or more additional digits in number.
+        // If exactly four return it now.
+        // Otherwise, prepare for next iteration.
+        //
+        result += s0 * 1000 + s1 * 100 + s2 * 10 + s3;
+        s0 = static_cast<uint32_t>(*m_f++) - '0';
+        if (s0 >= 10)
+            return result;
 
-	// Skip ahead by 4 orders of magnitude
-	result *= 10000;
+        // Skip ahead by 4 orders of magnitude
+        result *= 10000;
     }
 }

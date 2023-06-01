@@ -74,7 +74,7 @@ typedef uint64_t tBmp;
 struct Cell {
     Cell(const tPos p, const tBmp b = 0) : pos(p), bmp(b) {}
     bool operator==(const Cell &rhs) const {
-	return pos == rhs.pos && bmp == rhs.bmp;
+        return pos == rhs.pos && bmp == rhs.bmp;
     }
 
     tPos pos;
@@ -92,8 +92,8 @@ static long npositions = 0;
 const int BMPSIZE = ((int)sizeof(tBmp) * CHAR_BIT);
 const tBmp XBMPMASK = BMPSIZE - 1;
 const tBmp XCELLMASK = ~XBMPMASK;
-const tPos XOFFSET = 1024;		// Move away from 0 (sentinel value)
-const tPos YOFFSET = INT_MIN + 1024;	// Make y negative
+const tPos XOFFSET = 1024;              // Move away from 0 (sentinel value)
+const tPos YOFFSET = INT_MIN + 1024;    // Make y negative
 const int MAXBLOCKS = 10000;
 const int SQRT_MAXBLOCKS = 100;
 
@@ -101,15 +101,15 @@ const int SQRT_MAXBLOCKS = 100;
 // File globals. These parameters are common to all positions.
 //
 static tPos gMinX, gMinY, gMaxX, gMaxY, gRightx;
-static unsigned gExtinction;	// Max number of steps without progress
-static tBmp gRightmask;		// To clip cells to right edge
+static unsigned gExtinction;    // Max number of steps without progress
+static tBmp gRightmask;         // To clip cells to right edge
 static tPos gGoalX, gGoalY;
-static int gBlkXDim, gBlkYDim;	// Dimensions of gBlocks
-static int gBlkXFactor, gBlkYFactor;	// Cell to block index conversion
+static int gBlkXDim, gBlkYDim;  // Dimensions of gBlocks
+static int gBlkXFactor, gBlkYFactor;    // Cell to block index conversion
 static int gMinExpansions = 64;
 pthread_mutex_t gBlockMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t gBlockCond = PTHREAD_COND_INITIALIZER;
-FILE *gFout;			// Output file - protected by mutex above
+FILE *gFout;                    // Output file - protected by mutex above
 
 //
 // Like a chess program, represent a board position. It consists of the
@@ -128,30 +128,30 @@ public:
     void output(FILE *fp);
 
     inline bool legalmove(const int dir) const;// True if dirs[i] in bounds
-    Position *move(const int dir);	// Create new position by moving
-    bool nextgen();			// Advance game of life generation
+    Position *move(const int dir);      // Create new position by moving
+    bool nextgen();                     // Advance game of life generation
     void livingNeighbors(bool *const dirs) const; // True if cell dirs[i] lives
-    bool atgoal() const {		// True if smart cell arrived at goal
-	return (fIntelligentX == gGoalX) && (fIntelligentY == gGoalY);
+    bool atgoal() const {               // True if smart cell arrived at goal
+        return (fIntelligentX == gGoalX) && (fIntelligentY == gGoalY);
     }
-    uint32_t payoff() const { return fPayoff; }	// Estimated proximity to goal
+    uint32_t payoff() const { return fPayoff; } // Estimated proximity to goal
 
 private:
-    vector<Cell> fCells;		// Game of Life board
+    vector<Cell> fCells;                // Game of Life board
 
     //
     // Specific to maze of life extension
     //
     tPos fIntelligentX, fIntelligentY;  // Current position of smart cell
-    string fMoves;			// How it arrived here
-    unsigned fClosest;			// Closest this path ever came to goal
-    unsigned fNStuck;			// Generations without making progress
-    uint32_t fPayoff;			// Lower payoff = better position
+    string fMoves;                      // How it arrived here
+    unsigned fClosest;                  // Closest this path ever came to goal
+    unsigned fNStuck;                   // Generations without making progress
+    uint32_t fPayoff;                   // Lower payoff = better position
 
-    void recalcPayoff();		// Updates fPayoff
+    void recalcPayoff();                // Updates fPayoff
     inline void ADD2(tBmp &b0, tBmp &b1, const tBmp a0, const tBmp a1);
     inline void ADD3(tBmp &b0, tBmp &b1,
-	const tBmp a0, const tBmp a1, const tBmp a2);
+        const tBmp a0, const tBmp a1, const tBmp a2);
     inline tBmp ROL(const tBmp a0, const tBmp a1);
     inline tBmp ROR(const tBmp a0, const tBmp a1);
 };
@@ -168,7 +168,7 @@ struct PositionCompare
 {
     bool operator()(const Position *const lhs, const Position *const rhs) const
     {
-	return lhs->payoff() > rhs->payoff();
+        return lhs->payoff() > rhs->payoff();
     }
 };
 
@@ -216,17 +216,17 @@ typedef pair<tPos, tPos> coord;
 bool coordPredicate(const coord &c1, const coord &c2)
 {
     if (c1.second != c2.second)
-	return c1.second < c2.second;
+        return c1.second < c2.second;
     else
-	return c1.first > c2.first;
+        return c1.first > c2.first;
 }
 
 void Position::load(FILE *fp, const char *const fname, int line)
 {
     if (fscanf(fp, "%d %d\n", &fIntelligentY, &fIntelligentX) != 2) {
 errparse:
-	fprintf(stderr, "parse error on line %d of %s\n", line, fname);
-	exit(-1);
+        fprintf(stderr, "parse error on line %d of %s\n", line, fname);
+        exit(-1);
     }
     fIntelligentY = YOFFSET + fIntelligentY - 1;
     fIntelligentX = XOFFSET + fIntelligentX - 1;
@@ -237,19 +237,19 @@ errparse:
     coords.push_back(coord(fIntelligentX, fIntelligentY));
     int i, n;
     while ((n = fscanf(fp, "%d %d %d %d %d %d %d %d %d %d\n", &y[0], &x[0],
-	    &y[1], &x[1], &y[2], &x[2], &y[3], &x[3], &y[4], &x[4])) > 0) {
-	if (n % 2 != 0)
-	    goto errparse;
-	++line;
-	n /= 2;
-	for (i = 0; i < n; ++i) {
-	    if (x[i] == 0 && y[i] == 0)
-		if (i < n - 1)
-		    goto errparse;
-		else
-		    break;
-	    coords.push_back(coord(XOFFSET + x[i] - 1, YOFFSET + y[i] - 1));
-	}
+            &y[1], &x[1], &y[2], &x[2], &y[3], &x[3], &y[4], &x[4])) > 0) {
+        if (n % 2 != 0)
+            goto errparse;
+        ++line;
+        n /= 2;
+        for (i = 0; i < n; ++i) {
+            if (x[i] == 0 && y[i] == 0)
+                if (i < n - 1)
+                    goto errparse;
+                else
+                    break;
+            coords.push_back(coord(XOFFSET + x[i] - 1, YOFFSET + y[i] - 1));
+        }
     }
 
     //
@@ -261,44 +261,44 @@ errparse:
     // Convert to internal format. Each horizontal run of BMPSIZE cells
     // is represented by a bitmap (lsb = leftmost cell of run).
     //
-    tPos ylast = 0;				// Zero values unused
+    tPos ylast = 0;                             // Zero values unused
     tPos xlast = 0;
     tBmp bmp = 0;
     vector<coord>::const_iterator c, cend = coords.end();
     for (c = coords.begin(); c != cend; ++c) {
-	if (c->second != ylast || (c->first & XCELLMASK) != xlast) {
-	    //
-	    // Output previous bmp at xlast,ylast
-	    //
-	    if (xlast > 0)
-		fCells.push_back(Cell(xlast, bmp));
+        if (c->second != ylast || (c->first & XCELLMASK) != xlast) {
+            //
+            // Output previous bmp at xlast,ylast
+            //
+            if (xlast > 0)
+                fCells.push_back(Cell(xlast, bmp));
 
-	    //
-	    // Output new y-coord
-	    // Negative pos indicates this is y only
-	    //
-	    if (c->second != ylast) {
-		ylast = c->second;
-		fCells.push_back(Cell(ylast));
-	    }
+            //
+            // Output new y-coord
+            // Negative pos indicates this is y only
+            //
+            if (c->second != ylast) {
+                ylast = c->second;
+                fCells.push_back(Cell(ylast));
+            }
 
-	    //
-	    // Start a new bitmap at x
-	    //
-	    bmp = 0;
-	    xlast = c->first & XCELLMASK;
-	}
+            //
+            // Start a new bitmap at x
+            //
+            bmp = 0;
+            xlast = c->first & XCELLMASK;
+        }
 
-	//
-	// Build up bitmap at x
-	//
-	bmp |= 1ULL << (c->first & XBMPMASK);
+        //
+        // Build up bitmap at x
+        //
+        bmp |= 1ULL << (c->first & XBMPMASK);
     }
     //
     // Output final bmp (if any) and sentinel 01
     //
     if (bmp)
-	fCells.push_back(Cell(xlast, bmp));
+        fCells.push_back(Cell(xlast, bmp));
     fCells.push_back(Cell(0));
     recalcPayoff();
 }
@@ -321,8 +321,8 @@ errparse:
 void Position::output(FILE *fp)
 {
     for (int i = 0; i < fMoves.size(); i += 40) {
-	string sub = fMoves.substr(i, 40);
-	fprintf(fp, "%s\n", sub.c_str());
+        string sub = fMoves.substr(i, 40);
+        fprintf(fp, "%s\n", sub.c_str());
     }
 }
 
@@ -335,35 +335,35 @@ inline bool Position::legalmove(const int dir) const
 
     switch (dir) {
     case 0:
-	break;
+        break;
     case 1:
-	if (fIntelligentX <= gMinX) return false;
-	if (fIntelligentY <= gMinY) return false;
-	break;
+        if (fIntelligentX <= gMinX) return false;
+        if (fIntelligentY <= gMinY) return false;
+        break;
     case 2:
-	if (fIntelligentY <= gMinY) return false;
-	break;
+        if (fIntelligentY <= gMinY) return false;
+        break;
     case 3:
-	if (fIntelligentX >= gMaxX) return false;
-	if (fIntelligentY <= gMinY) return false;
-	break;
+        if (fIntelligentX >= gMaxX) return false;
+        if (fIntelligentY <= gMinY) return false;
+        break;
     case 4:
-	if (fIntelligentX >= gMaxX) return false;
-	break;
+        if (fIntelligentX >= gMaxX) return false;
+        break;
     case 5:
-	if (fIntelligentX >= gMaxX) return false;
-	if (fIntelligentY >= gMaxY) return false;
-	break;
+        if (fIntelligentX >= gMaxX) return false;
+        if (fIntelligentY >= gMaxY) return false;
+        break;
     case 6:
-	if (fIntelligentY >= gMaxY) return false;
-	break;
+        if (fIntelligentY >= gMaxY) return false;
+        break;
     case 7:
-	if (fIntelligentX <= gMinX) return false;
-	if (fIntelligentY >= gMaxY) return false;
-	break;
+        if (fIntelligentX <= gMinX) return false;
+        if (fIntelligentY >= gMaxY) return false;
+        break;
     case 8:
-	if (fIntelligentX <= gMinX) return false;
-	break;
+        if (fIntelligentX <= gMinX) return false;
+        break;
     }
 
     return true;
@@ -379,8 +379,8 @@ inline bool Position::legalmove(const int dir) const
 Position *Position::move(const int dir)
 {
     if (dir == 0) {
-	fMoves.push_back('0');
-	return this;
+        fMoves.push_back('0');
+        return this;
     }
 
     Position *next = new Position(*this);
@@ -414,53 +414,53 @@ Position *Position::move(const int dir)
     bool addednew = false;
     vector<Cell>::const_iterator c;
     for (c = fCells.begin(); c->pos; ++c) {
-	if (c->pos < 0)
-	    y = c->pos;
-	else {
-	    x = c->pos;
-	    bmp = c->bmp;
+        if (c->pos < 0)
+            y = c->pos;
+        else {
+            x = c->pos;
+            bmp = c->bmp;
 
-	    //
-	    // Clear old intelligent cell
-	    //
-	    if (y == yold && x == xcellold)
-		bmp &= ~xbitold;
+            //
+            // Clear old intelligent cell
+            //
+            if (y == yold && x == xcellold)
+                bmp &= ~xbitold;
 
-	    //
-	    // Set new intelligent cell
-	    //
-	    if (!addednew)
-		if (y == ynew) {
-		    if (x == xcellnew) {
-			bmp |= xbitnew;
-			addednew = true;
-		    }
-		    else if (x < xcellnew) {
-			if (y != ylast) {
-			    next->fCells.push_back(Cell(y));
-			    ylast = y;
-			}
-			next->fCells.push_back(Cell(xcellnew, xbitnew));
-			addednew = true;
-		    }
-		}
-		else if (y > ynew) {
-		    next->fCells.push_back(Cell(ynew));
-		    next->fCells.push_back(Cell(xcellnew, xbitnew));
-		    addednew = true;
-		}
-	    if (bmp) {
-		if (y != ylast) {
-		    next->fCells.push_back(Cell(y));
-		    ylast = y;
-		}
-		next->fCells.push_back(Cell(c->pos, bmp));
-	    }
-	}
+            //
+            // Set new intelligent cell
+            //
+            if (!addednew)
+                if (y == ynew) {
+                    if (x == xcellnew) {
+                        bmp |= xbitnew;
+                        addednew = true;
+                    }
+                    else if (x < xcellnew) {
+                        if (y != ylast) {
+                            next->fCells.push_back(Cell(y));
+                            ylast = y;
+                        }
+                        next->fCells.push_back(Cell(xcellnew, xbitnew));
+                        addednew = true;
+                    }
+                }
+                else if (y > ynew) {
+                    next->fCells.push_back(Cell(ynew));
+                    next->fCells.push_back(Cell(xcellnew, xbitnew));
+                    addednew = true;
+                }
+            if (bmp) {
+                if (y != ylast) {
+                    next->fCells.push_back(Cell(y));
+                    ylast = y;
+                }
+                next->fCells.push_back(Cell(c->pos, bmp));
+            }
+        }
     }
     if (!addednew) {
-	next->fCells.push_back(Cell(ynew));
-	next->fCells.push_back(Cell(xcellnew, xbitnew));
+        next->fCells.push_back(Cell(ynew));
+        next->fCells.push_back(Cell(xcellnew, xbitnew));
     }
     next->fCells.push_back(Cell(0));
 
@@ -524,7 +524,7 @@ bool Position::nextgen()
     // prune positions on a valid solution path.
     //
     if (fNStuck > gExtinction)
-	return false;
+        return false;
 
     //
     // Output next generation to newcells.
@@ -532,10 +532,10 @@ bool Position::nextgen()
     //
     vector<Cell> newcells;
     vector<Cell>::const_iterator prev, curr, next;
-    newcells.reserve(fCells.size() * 4);	// Handle population explosion
+    newcells.reserve(fCells.size() * 4);        // Handle population explosion
 
-    tPos ylast = 1;				// Previous y value output
-    tPos xdiv = fIntelligentX & XCELLMASK;	// Cache intelligent location
+    tPos ylast = 1;                             // Previous y value output
+    tPos xdiv = fIntelligentX & XCELLMASK;      // Cache intelligent location
     tBmp xmask = 1ULL << (fIntelligentX & XBMPMASK);
 
     register tBmp prevmid, currmid, nextmid;
@@ -551,180 +551,180 @@ bool Position::nextgen()
     //
     prev = next = curr = fCells.begin();
     for (;;) {
-	tPos ycurr;
-	if (prev == next) {
-	    if (next->pos == 0)
-		goto done;
-	    ycurr = next++->pos - 1;
-	    if (ycurr < gMinY) {
-		++ycurr;
-		while (next->pos > 0)
-		    ++next;
-		++curr;
-		if (next->pos == ycurr + 1)
-		    ++next;
-	    }
-	}
-	else {
-	    if (prev->pos == ycurr++)
-		++prev;
-	    if (curr->pos == ycurr)
-		++curr;
-	    if (next->pos == ycurr + 1)
-		++next;
-	}
-	if (ycurr > gMaxY)
-	    goto done;
+        tPos ycurr;
+        if (prev == next) {
+            if (next->pos == 0)
+                goto done;
+            ycurr = next++->pos - 1;
+            if (ycurr < gMinY) {
+                ++ycurr;
+                while (next->pos > 0)
+                    ++next;
+                ++curr;
+                if (next->pos == ycurr + 1)
+                    ++next;
+            }
+        }
+        else {
+            if (prev->pos == ycurr++)
+                ++prev;
+            if (curr->pos == ycurr)
+                ++curr;
+            if (next->pos == ycurr + 1)
+                ++next;
+        }
+        if (ycurr > gMaxY)
+            goto done;
 
-	//
-	// Secondary loop scans x from right to left
-	//
+        //
+        // Secondary loop scans x from right to left
+        //
         for (;;) {
-	    //
-	    // Let xfore be the rightmost cell of rows prev, curr and next.
-	    //
-	    tPos xfore = prev->pos;
+            //
+            // Let xfore be the rightmost cell of rows prev, curr and next.
+            //
+            tPos xfore = prev->pos;
             if (xfore < curr->pos)
-		xfore = curr->pos;
+                xfore = curr->pos;
             if (xfore < next->pos)
-		xfore = next->pos;
+                xfore = next->pos;
             if (xfore <= 0)
-		break;		// All three rows have been processed
+                break;          // All three rows have been processed
 
-	    //
-	    // xmid is where we will write the next cell if non-empty.
-	    // We're actually looking ahead one cell with xfore. Activity
-	    // at xfore can spill over into xmid.
-	    //
-	    tPos xmid = xfore + BMPSIZE;
+            //
+            // xmid is where we will write the next cell if non-empty.
+            // We're actually looking ahead one cell with xfore. Activity
+            // at xfore can spill over into xmid.
+            //
+            tPos xmid = xfore + BMPSIZE;
 
-	    //
-	    // Innermost loop scans a connected series of living cells
-	    // from right to left.
-	    //
+            //
+            // Innermost loop scans a connected series of living cells
+            // from right to left.
+            //
             for (;;) {
-		//
-		// If xmid has gone off the left edge, we're done with this row.
-		// Advance prev, curr and next pointers to Y coords.
-		//
-		if (xmid < gMinX) {
-		    while (prev->pos > 0)
-			++prev;
-		    while (curr->pos > 0)
-			++curr;
-		    while (next->pos > 0)
-			++next;
-		    break;
-		}
-
-		//
-		// Set bitmaps prevfore, currfore and nextfore.
-		//
-		register tBmp prevfore, currfore, nextfore;
-                if (prev->pos == xfore) {
-		    prevfore = prev++->bmp;
-		    if (curr->pos == xfore)
-			currfore = curr++->bmp;
-		    else
-			currfore = 0;
-		    if (next->pos == xfore)
-			nextfore = next++->bmp;
-		    else
-			nextfore = 0;
+                //
+                // If xmid has gone off the left edge, we're done with this row.
+                // Advance prev, curr and next pointers to Y coords.
+                //
+                if (xmid < gMinX) {
+                    while (prev->pos > 0)
+                        ++prev;
+                    while (curr->pos > 0)
+                        ++curr;
+                    while (next->pos > 0)
+                        ++next;
+                    break;
                 }
-		else {
-		    prevfore = 0;
-		    if (curr->pos == xfore) {
-			currfore = curr++->bmp;
-			if (next->pos == xfore)
-			    nextfore = next++->bmp;
-			else
-			    nextfore = 0;
-		    }
-		    else {
-			currfore = 0;
-			if (next->pos == xfore)
-			    nextfore = next++->bmp;
-			else {
-			    nextfore = 0;
-			    //
-			    // If prevfore, currfore and nextfore are all zero,
-			    // it may be time to move on to the next group of
-			    // living cells in the x direction. Check rear
-			    // counts and mid bitmaps first.
-			    //
-			    if (!prevmid && !currmid && !nextmid &&
-				!rear0 && !rear1)
-				break;
-			}
-		    }
-		}
 
-		if (xmid <= gMaxX) {
-		    //
-		    // Let count0, count1, and count2 be bits 0-2 of the
-		    // neighbor counts for the set of cells under consideration.
-		    // Don't bother calculating bit 3 because it's only set
-		    // when a cell has 8 neighbors. The cell will die whenever
-		    // bit 2 gets set (4 or more neighbors) so catch large
-		    // counts at that point.
-		    //
-		    tBmp mid0, mid1, fore0, fore1;
-		    tBmp count0, count1, count2a, count2b;
-		    ADD3(fore0, fore1, ROL(prevmid, prevfore),
-				       ROL(currmid, currfore),
-				       ROL(nextmid, nextfore));
-		    ADD2(mid0, mid1, prevmid, nextmid);
-		    ADD3(count0, count1, fore0, mid0, rear0);
-		    ADD3(count1, count2a, count1, fore1, rear1);
-		    ADD2(count1, count2b, count1, mid1);
+                //
+                // Set bitmaps prevfore, currfore and nextfore.
+                //
+                register tBmp prevfore, currfore, nextfore;
+                if (prev->pos == xfore) {
+                    prevfore = prev++->bmp;
+                    if (curr->pos == xfore)
+                        currfore = curr++->bmp;
+                    else
+                        currfore = 0;
+                    if (next->pos == xfore)
+                        nextfore = next++->bmp;
+                    else
+                        nextfore = 0;
+                }
+                else {
+                    prevfore = 0;
+                    if (curr->pos == xfore) {
+                        currfore = curr++->bmp;
+                        if (next->pos == xfore)
+                            nextfore = next++->bmp;
+                        else
+                            nextfore = 0;
+                    }
+                    else {
+                        currfore = 0;
+                        if (next->pos == xfore)
+                            nextfore = next++->bmp;
+                        else {
+                            nextfore = 0;
+                            //
+                            // If prevfore, currfore and nextfore are all zero,
+                            // it may be time to move on to the next group of
+                            // living cells in the x direction. Check rear
+                            // counts and mid bitmaps first.
+                            //
+                            if (!prevmid && !currmid && !nextmid &&
+                                !rear0 && !rear1)
+                                break;
+                        }
+                    }
+                }
 
-		    //
-		    // Let bmp be the new state of the cells. OR the current
-		    // state of the cell to the neighbor count to handle both
-		    // the living rule (3 or 4 neighbors) and the spontaneous
-		    // generation rule (3 neighbors).
-		    //
-		    tBmp bmp = (count0 | currmid) & count1 &
-			~count2a & ~count2b;	// Mask those with 4+ neighbors
+                if (xmid <= gMaxX) {
+                    //
+                    // Let count0, count1, and count2 be bits 0-2 of the
+                    // neighbor counts for the set of cells under consideration.
+                    // Don't bother calculating bit 3 because it's only set
+                    // when a cell has 8 neighbors. The cell will die whenever
+                    // bit 2 gets set (4 or more neighbors) so catch large
+                    // counts at that point.
+                    //
+                    tBmp mid0, mid1, fore0, fore1;
+                    tBmp count0, count1, count2a, count2b;
+                    ADD3(fore0, fore1, ROL(prevmid, prevfore),
+                                       ROL(currmid, currfore),
+                                       ROL(nextmid, nextfore));
+                    ADD2(mid0, mid1, prevmid, nextmid);
+                    ADD3(count0, count1, fore0, mid0, rear0);
+                    ADD3(count1, count2a, count1, fore1, rear1);
+                    ADD2(count1, count2b, count1, mid1);
 
-		    //
-		    // Exit early if intelligent cell will die.
-		    //
-		    if (ycurr == fIntelligentY && xmid == xdiv &&
-			(bmp & xmask) == 0)
-			return false;
+                    //
+                    // Let bmp be the new state of the cells. OR the current
+                    // state of the cell to the neighbor count to handle both
+                    // the living rule (3 or 4 neighbors) and the spontaneous
+                    // generation rule (3 neighbors).
+                    //
+                    tBmp bmp = (count0 | currmid) & count1 &
+                        ~count2a & ~count2b;    // Mask those with 4+ neighbors
 
-		    //
-		    // If bmp is non-zero, clip it to right boundary and
-		    // output it.
-		    //
-		    if (bmp && (xmid != gRightx || (bmp &= gRightmask) != 0)) {
-			if (ycurr != ylast) {
-			    newcells.push_back(Cell(ycurr));
-			    ylast = ycurr;
-			}
-			newcells.push_back(Cell(xmid, bmp));
-		    }
-		}
+                    //
+                    // Exit early if intelligent cell will die.
+                    //
+                    if (ycurr == fIntelligentY && xmid == xdiv &&
+                        (bmp & xmask) == 0)
+                        return false;
 
-		//
-		// Pre-calculate rear neighbor counts for next iteration.
-		// This way we don't need to keep rear bitmaps around.
-		//
+                    //
+                    // If bmp is non-zero, clip it to right boundary and
+                    // output it.
+                    //
+                    if (bmp && (xmid != gRightx || (bmp &= gRightmask) != 0)) {
+                        if (ycurr != ylast) {
+                            newcells.push_back(Cell(ycurr));
+                            ylast = ycurr;
+                        }
+                        newcells.push_back(Cell(xmid, bmp));
+                    }
+                }
+
+                //
+                // Pre-calculate rear neighbor counts for next iteration.
+                // This way we don't need to keep rear bitmaps around.
+                //
                 ADD3(rear0, rear1, ROR(prevfore, prevmid),
                                    ROR(currfore, currmid),
                                    ROR(nextfore, nextmid));
 
-		//
-		// Advance to the left.
-		// Foreward bitmaps become middle bitmaps.
-		//
+                //
+                // Advance to the left.
+                // Foreward bitmaps become middle bitmaps.
+                //
                 prevmid = prevfore;
-		currmid = currfore;
-		nextmid = nextfore;
-		xmid = xfore;
-		xfore -= BMPSIZE;		// Advance to the left
+                currmid = currfore;
+                nextmid = nextfore;
+                xmid = xfore;
+                xfore -= BMPSIZE;               // Advance to the left
             }
         }
     }
@@ -755,45 +755,45 @@ void Position::livingNeighbors(bool *const dirs) const
     tBmp xemask = (1UL << ((fIntelligentX + 1) & XBMPMASK));
 
     for (int i = 0; i <= 8; ++i)
-	dirs[i] = false;
+        dirs[i] = false;
 
     //
     // Scan for north Y coord
     //
     vector<Cell>::const_iterator c;
     for (c = fCells.begin(); c->pos > 0 || c->pos < yn; ++c)
-	;
+        ;
     if (c->pos == yn) {
-	for (++c; c->pos > 0 && c->pos > xe; ++c)	// Scan for east X
-	    ;
-	if (c->pos == xe)
-	    dirs[3] = (c->bmp & xemask) != 0;
-	if (c->pos == xi || c->pos > 0 && (++c)->pos == xi)
-	    dirs[2] = (c->bmp & ximask) != 0;
-	if (c->pos == xw || c->pos > 0 && (++c)->pos == xw)
-	    dirs[1] = (c->bmp & xwmask) != 0;
-	while (c->pos > 0)				// Advance to next Y
-	    ++c;
+        for (++c; c->pos > 0 && c->pos > xe; ++c)       // Scan for east X
+            ;
+        if (c->pos == xe)
+            dirs[3] = (c->bmp & xemask) != 0;
+        if (c->pos == xi || c->pos > 0 && (++c)->pos == xi)
+            dirs[2] = (c->bmp & ximask) != 0;
+        if (c->pos == xw || c->pos > 0 && (++c)->pos == xw)
+            dirs[1] = (c->bmp & xwmask) != 0;
+        while (c->pos > 0)                              // Advance to next Y
+            ++c;
     }
     if (c->pos == yi) {
-	for (++c; c->pos > 0 && c->pos > xe; ++c)
-	    ;
-	if (c->pos == xe)
-	    dirs[4] = (c->bmp & xemask) != 0;
-	if (c->pos == xw || c->pos > 0 && (++c)->pos == xw)
-	    dirs[8] = (c->bmp & xwmask) != 0;
-	while (c->pos > 0)
-	    ++c;
+        for (++c; c->pos > 0 && c->pos > xe; ++c)
+            ;
+        if (c->pos == xe)
+            dirs[4] = (c->bmp & xemask) != 0;
+        if (c->pos == xw || c->pos > 0 && (++c)->pos == xw)
+            dirs[8] = (c->bmp & xwmask) != 0;
+        while (c->pos > 0)
+            ++c;
     }
     if (c->pos == ys) {
-	for (++c; c->pos > 0 && c->pos > xe; ++c)
-	    ;
-	if (c->pos == xe)
-	    dirs[5] = (c->bmp & xemask) != 0;
-	if (c->pos == xi || c->pos > 0 && (++c)->pos == xi)
-	    dirs[6] = (c->bmp & ximask) != 0;
-	if (c->pos == xw || c->pos > 0 && (++c)->pos == xw)
-	    dirs[7] = (c->bmp & xwmask) != 0;
+        for (++c; c->pos > 0 && c->pos > xe; ++c)
+            ;
+        if (c->pos == xe)
+            dirs[5] = (c->bmp & xemask) != 0;
+        if (c->pos == xi || c->pos > 0 && (++c)->pos == xi)
+            dirs[6] = (c->bmp & ximask) != 0;
+        if (c->pos == xw || c->pos > 0 && (++c)->pos == xw)
+            dirs[7] = (c->bmp & xwmask) != 0;
     }
 }
 
@@ -811,12 +811,12 @@ void Position::recalcPayoff()
     if (dx < 0) dx = -dx;
     if (dy < 0) dy = -dy;
     if (dx > dy) {
-	major = dx;
-	minor = dy;
+        major = dx;
+        minor = dy;
     }
     else {
-	major = dy;
-	minor = dx;
+        major = dy;
+        minor = dx;
     }
 
 #ifdef OPTIMAL
@@ -843,11 +843,11 @@ void Position::recalcPayoff()
     // will turn their focus to positions further back on the path.
     //
     if (major < fClosest) {
-	fClosest = major;
-	fNStuck = 0;
+        fClosest = major;
+        fNStuck = 0;
     }
-    else if (++fNStuck > 8)		// No progress for 8 generations is OK
-	major += fNStuck - 8;
+    else if (++fNStuck > 8)             // No progress for 8 generations is OK
+        major += fNStuck - 8;
     fPayoff = (major << 16) + minor;
 #endif
 }
@@ -868,28 +868,28 @@ void Position::recalcPayoff()
 // Locking only occurs on the abstract graph when a thread releases one
 // block to acquire a more promising one.
 //
-int gTotalSigma = 0;			// Value > 0 when threads are working
+int gTotalSigma = 0;                    // Value > 0 when threads are working
 
 class Block {
 public:
     Block() : fBlkX(0), fBlkY(0), fEmpty(true), fBest(INT_MAX),
-	fHot(false), fSigma(0), fHotSigma(0) {}
+        fHot(false), fSigma(0), fHotSigma(0) {}
 
-    int fBlkX, fBlkY;			// Coordinates of this block
+    int fBlkX, fBlkY;                   // Coordinates of this block
     void setxy(const int x, const int y) { fBlkX = x; fBlkY = y; }
 
     bool empty() const { return fEmpty; }
     void push(Position *const p) {
-	fHeap.push(p);
-	fEmpty = false;
-	fBest = fHeap.top()->payoff();
+        fHeap.push(p);
+        fEmpty = false;
+        fBest = fHeap.top()->payoff();
     }
     Position *pop() {
-	Position *p = fHeap.top();
-	fHeap.pop();
-	fEmpty = fHeap.empty();
-	fBest = fEmpty ? INT_MAX : fHeap.top()->payoff();
-	return p;
+        Position *p = fHeap.top();
+        fHeap.pop();
+        fEmpty = fHeap.empty();
+        fBest = fEmpty ? INT_MAX : fHeap.top()->payoff();
+        return p;
     }
 
     bool sigma() const { return fSigma; }
@@ -918,8 +918,8 @@ private:
     unsigned fBest;
 
     bool fHot;
-    int fSigma;				// Number of Blocks suspended by us
-    int fHotSigma;			// # of hot Blocks suspended by us
+    int fSigma;                         // Number of Blocks suspended by us
+    int fHotSigma;                      // # of hot Blocks suspended by us
     priority_queue<Position *, vector<Position *>, PositionCompare> fHeap;
 };
 
@@ -927,7 +927,7 @@ struct BlockCompare
 {
     bool operator()(const Block *const lhs, const Block *const rhs) const
     {
-	return lhs->best() < rhs->best();
+        return lhs->best() < rhs->best();
     }
 };
 
@@ -942,23 +942,23 @@ public:
     bool empty() const { return fEmpty; }
     unsigned best() const { return fBest; }
     void push(Block *const b) {
-	fSet.insert(b);
-	fEmpty = false;
-	fBest = (*fSet.begin())->best();
+        fSet.insert(b);
+        fEmpty = false;
+        fBest = (*fSet.begin())->best();
     }
     Block *pop() {
-	set<Block *, BlockCompare>::iterator bestiter = fSet.begin();
-	Block *b = *bestiter;
-	fSet.erase(bestiter);
-	fEmpty = fSet.empty();
-	fBest = fEmpty ? INT_MAX : (*fSet.begin())->best();
-	return b;
+        set<Block *, BlockCompare>::iterator bestiter = fSet.begin();
+        Block *b = *bestiter;
+        fSet.erase(bestiter);
+        fEmpty = fSet.empty();
+        fBest = fEmpty ? INT_MAX : (*fSet.begin())->best();
+        return b;
     }
     void remove(Block *const b) {
-	if (fSet.erase(b)) {
-	    fEmpty = fSet.empty();
-	    fBest = fEmpty ? INT_MAX : (*fSet.begin())->best();
-	}
+        if (fSet.erase(b)) {
+            fEmpty = fSet.empty();
+            fBest = fEmpty ? INT_MAX : (*fSet.begin())->best();
+        }
     }
 
 private:
@@ -994,7 +994,7 @@ static Position *incumbent;
 //
 inline void Block::incrSigma() {
     if (!fSigma)
-	gFreeList.remove(this);
+        gFreeList.remove(this);
     ++fSigma;
     ++gTotalSigma;
 }
@@ -1024,37 +1024,37 @@ void Block::sethot()
 {
     pthread_mutex_lock(&gBlockMutex);
     if (!fHot && fSigma) {
-	int x, y, blkXmin, blkYmin, blkXmax, blkYmax;
-	unsigned mybest = best();
-	scope(blkXmin, blkYmin, blkXmax, blkYmax);
+        int x, y, blkXmin, blkYmin, blkXmax, blkYmax;
+        unsigned mybest = best();
+        scope(blkXmin, blkYmin, blkXmax, blkYmax);
 
-	//
-	// See if there's another hot block around here who's
-	// hotter than me.
-	//
-	for (y = blkYmin; y <= blkYmax; ++y)
-	    for (x = blkXmin; x <= blkXmax; ++x)
-		if (y != fBlkY || x != fBlkX) {
-		    const Block &n = gBlocks[index(x, y)];
-		    if (n.hot() && n.best() < mybest)
-			goto finish;
-		}
+        //
+        // See if there's another hot block around here who's
+        // hotter than me.
+        //
+        for (y = blkYmin; y <= blkYmax; ++y)
+            for (x = blkXmin; x <= blkXmax; ++x)
+                if (y != fBlkY || x != fBlkX) {
+                    const Block &n = gBlocks[index(x, y)];
+                    if (n.hot() && n.best() < mybest)
+                        goto finish;
+                }
 
-	//
-	// Nope. I am the hottest!
-	//
-	fHot = true;
-	for (y = blkYmin; y <= blkYmax; ++y)
-	    for (x = blkXmin; x <= blkXmax; ++x)
-		if (y != fBlkY || x != fBlkX) {
-		    Block &n = gBlocks[index(x, y)];
-		    if (n.hot())
-			n.setcold();
-		    if (!n.sigma() && !n.hotsigma() && !n.empty()) {
-			gFreeList.push(&n);
-		    }
-		    n.incrHotSigma();
-		}
+        //
+        // Nope. I am the hottest!
+        //
+        fHot = true;
+        for (y = blkYmin; y <= blkYmax; ++y)
+            for (x = blkXmin; x <= blkXmax; ++x)
+                if (y != fBlkY || x != fBlkX) {
+                    Block &n = gBlocks[index(x, y)];
+                    if (n.hot())
+                        n.setcold();
+                    if (!n.sigma() && !n.hotsigma() && !n.empty()) {
+                        gFreeList.push(&n);
+                    }
+                    n.incrHotSigma();
+                }
     }
 
 finish:
@@ -1069,17 +1069,17 @@ void Block::setcold()
     scope(blkXmin, blkYmin, blkXmax, blkYmax);
 
     for (y = blkYmin; y <= blkYmax; ++y)
-	for (x = blkXmin; x <= blkXmax; ++x)
-	    if (y != fBlkY || x != fBlkX) {
-		Block &n = gBlocks[index(x, y)];
-		n.decrHotSigma();
-		if (!n.sigma() && !n.hotsigma() && !n.empty()) {
-		    if (n.hot())
-			n.setcold();
-		    gFreeList.push(&n);
-		    pthread_cond_signal(&gBlockCond);
-		}
-	    }
+        for (x = blkXmin; x <= blkXmax; ++x)
+            if (y != fBlkY || x != fBlkX) {
+                Block &n = gBlocks[index(x, y)];
+                n.decrHotSigma();
+                if (!n.sigma() && !n.hotsigma() && !n.empty()) {
+                    if (n.hot())
+                        n.setcold();
+                    gFreeList.push(&n);
+                    pthread_cond_signal(&gBlockCond);
+                }
+            }
 }
 
 //
@@ -1093,18 +1093,18 @@ void Block::release()
     scope(blkXmin, blkYmin, blkXmax, blkYmax);
 
     for (y = blkYmin; y <= blkYmax; ++y)
-	for (x = blkXmin; x <= blkXmax; ++x) {
-	    Block &n = gBlocks[index(x, y)];
-	    n.decrSigma();
-	    if (y != fBlkY || x != fBlkX) {
-		if (!n.sigma() && !n.hotsigma() && !n.empty()) {
-		    if (n.hot())
-			n.setcold();
-		    gFreeList.push(&n);
-		    pthread_cond_signal(&gBlockCond);
-		}
-	    }
-	}
+        for (x = blkXmin; x <= blkXmax; ++x) {
+            Block &n = gBlocks[index(x, y)];
+            n.decrSigma();
+            if (y != fBlkY || x != fBlkX) {
+                if (!n.sigma() && !n.hotsigma() && !n.empty()) {
+                    if (n.hot())
+                        n.setcold();
+                    gFreeList.push(&n);
+                    pthread_cond_signal(&gBlockCond);
+                }
+            }
+        }
 }
 
 //
@@ -1119,31 +1119,31 @@ Block *Block::nextblock(Block *b, const bool forceswitch)
     int x, y, blkXmin, blkYmin, blkXmax, blkYmax;
 
     if (forceswitch || !b || b->empty())
-	pthread_mutex_lock(&gBlockMutex);
+        pthread_mutex_lock(&gBlockMutex);
     else if (pthread_mutex_trylock(&gBlockMutex) != 0)
-	return b;
+        return b;
     if (b) {
-	//
-	// If b is better than those in its scope and in the free list,
-	// then don't switch.
-	//
-	unsigned mybest = b->best();
-	unsigned bestscope = INT_MAX;
-	b->scope(blkXmin, blkYmin, blkXmax, blkYmax);
-	for (y = blkYmin; y <= blkYmax; ++y)
-	    for (x = blkXmin; x <= blkXmax; ++x)
-		if (y != b->fBlkY || x != b->fBlkX) {
-		    Block &bprime = gBlocks[index(x, y)];
-		    unsigned payoff = bprime.best();
-		    if (payoff < bestscope)
-			bestscope = payoff;
-		}
-	unsigned bestfree = gFreeList.best();
-	if (mybest < bestscope && mybest < bestfree) {
-	    pthread_mutex_unlock(&gBlockMutex);
-	    return b;
-	}
-	b->release();
+        //
+        // If b is better than those in its scope and in the free list,
+        // then don't switch.
+        //
+        unsigned mybest = b->best();
+        unsigned bestscope = INT_MAX;
+        b->scope(blkXmin, blkYmin, blkXmax, blkYmax);
+        for (y = blkYmin; y <= blkYmax; ++y)
+            for (x = blkXmin; x <= blkXmax; ++x)
+                if (y != b->fBlkY || x != b->fBlkX) {
+                    Block &bprime = gBlocks[index(x, y)];
+                    unsigned payoff = bprime.best();
+                    if (payoff < bestscope)
+                        bestscope = payoff;
+                }
+        unsigned bestfree = gFreeList.best();
+        if (mybest < bestscope && mybest < bestfree) {
+            pthread_mutex_unlock(&gBlockMutex);
+            return b;
+        }
+        b->release();
     }
 
     //
@@ -1151,23 +1151,23 @@ Block *Block::nextblock(Block *b, const bool forceswitch)
     //
     Block *n = 0;
     if (!gTotalSigma && gFreeList.empty()) {
-	if (!gDone) {
-	    fprintf(gFout, "No solution found.\n");
-	    fclose(gFout);
-	    gDone = true;
-	}
-	pthread_cond_broadcast(&gBlockCond);
+        if (!gDone) {
+            fprintf(gFout, "No solution found.\n");
+            fclose(gFout);
+            gDone = true;
+        }
+        pthread_cond_broadcast(&gBlockCond);
     }
     while (!gDone && gFreeList.empty())
-	pthread_cond_wait(&gBlockCond, &gBlockMutex);
+        pthread_cond_wait(&gBlockCond, &gBlockMutex);
     if (!gDone) {
-	n = gFreeList.pop();
-	n->scope(blkXmin, blkYmin, blkXmax, blkYmax);
-	for (y = blkYmin; y <= blkYmax; ++y)
-	    for (x = blkXmin; x <= blkXmax; ++x) {
-		Block &nprime = gBlocks[index(x, y)];
-		nprime.incrSigma();
-	    }
+        n = gFreeList.pop();
+        n->scope(blkXmin, blkYmin, blkXmax, blkYmax);
+        for (y = blkYmin; y <= blkYmax; ++y)
+            for (x = blkXmin; x <= blkXmax; ++x) {
+                Block &nprime = gBlocks[index(x, y)];
+                nprime.incrSigma();
+            }
     }
 
     pthread_mutex_unlock(&gBlockMutex);
@@ -1181,9 +1181,9 @@ bool Block::shouldswitch(int &exp, bool &force) const
 {
     force = false;
     if (empty())
-	return true;
+        return true;
     if (exp < gMinExpansions)
-	return false;
+        return false;
     exp = 0;
 
     int x, y, blkXmin, blkYmin, blkXmax, blkYmax;
@@ -1192,32 +1192,32 @@ bool Block::shouldswitch(int &exp, bool &force) const
     Block *hottest;
     scope(blkXmin, blkYmin, blkXmax, blkYmax);
     for (y = blkYmin; y <= blkYmax; ++y)
-	for (x = blkXmin; x <= blkXmax; ++x)
-	    if (y != fBlkY || x != fBlkX) {
-		Block &bprime = gBlocks[index(x, y)];
-		unsigned payoff = bprime.best();
-		if (payoff < bestscope) {
-		    bestscope = payoff;
-		    hottest = &bprime;
-		}
-	    }
+        for (x = blkXmin; x <= blkXmax; ++x)
+            if (y != fBlkY || x != fBlkX) {
+                Block &bprime = gBlocks[index(x, y)];
+                unsigned payoff = bprime.best();
+                if (payoff < bestscope) {
+                    bestscope = payoff;
+                    hottest = &bprime;
+                }
+            }
     unsigned bestfree = gFreeList.best();
     if (bestfree < mybest || bestscope < mybest) {
-	if (bestscope < bestfree) {
-	    hottest->sethot();
-	    force = true;
-	}
-	return true;
+        if (bestscope < bestfree) {
+            hottest->sethot();
+            force = true;
+        }
+        return true;
     }
 
     pthread_mutex_lock(&gBlockMutex);
     for (y = blkYmin; y <= blkYmax; ++y)
-	for (x = blkXmin; x <= blkXmax; ++x)
-	    if (y != fBlkY || x != fBlkX) {
-		Block &bprime = gBlocks[index(x, y)];
-		if (bprime.hot())
-		    bprime.setcold();
-	    }
+        for (x = blkXmin; x <= blkXmax; ++x)
+            if (y != fBlkY || x != fBlkX) {
+                Block &bprime = gBlocks[index(x, y)];
+                if (bprime.hot())
+                    bprime.setcold();
+            }
     pthread_mutex_unlock(&gBlockMutex);
     return false;
 }
@@ -1232,75 +1232,75 @@ static void *threadsearch(void *data)
     int exp;
     bool force = false;
     while (!gDone && (b = Block::nextblock(b, force)) != 0) {
-	exp = 0;
-	while (!gDone && !b->shouldswitch(exp, force)) {
-	    Position *p = b->pop();
+        exp = 0;
+        while (!gDone && !b->shouldswitch(exp, force)) {
+            Position *p = b->pop();
 #ifdef STATS
-	    ++npositions;
+            ++npositions;
 #endif
 #ifdef OPTIMAL
-	    // if p is worse than incumbent
-	    //     prune p
+            // if p is worse than incumbent
+            //     prune p
 #endif
-	    if (p->atgoal()) {
+            if (p->atgoal()) {
 #ifdef OPTIMAL
-		// if p is better than incumbent
-		//     lock
-		//     incumbent = p
-		//     unlock
+                // if p is better than incumbent
+                //     lock
+                //     incumbent = p
+                //     unlock
 #else
-		pthread_mutex_lock(&gBlockMutex);
-		if (!gDone) {
-		    p->output(gFout);
-		    fclose(gFout);
-		    gDone = true;
-		}
-		pthread_mutex_unlock(&gBlockMutex);
-		pthread_cond_broadcast(&gBlockCond);
+                pthread_mutex_lock(&gBlockMutex);
+                if (!gDone) {
+                    p->output(gFout);
+                    fclose(gFout);
+                    gDone = true;
+                }
+                pthread_mutex_unlock(&gBlockMutex);
+                pthread_cond_broadcast(&gBlockCond);
 #ifdef SINGLETHREAD
-		return NULL;
+                return NULL;
 #else
-		pthread_exit(NULL);
+                pthread_exit(NULL);
 #endif
 #endif
-	    }
+            }
 
-	    //
-	    // Expand children by making moves.
-	    //
-	    Position *next;
-	    bool living[9];
-	    p->livingNeighbors(living);
-	    for (int d = 1; d <= 8; ++d)
-		if (p->legalmove(d) && !living[d]) {
-		    next = p->move(d);
-		    //
-		    // Only save viable positions where the intelligent
-		    // cell survives.
-		    //
-		    if (!next->nextgen())
-			delete next;
-		    else {
-			int bx = next->getx() / gBlkXFactor;
-			int by = next->gety() / gBlkYFactor;
-			gBlocks[Block::index(bx, by)].push(next);
-		    }
-	    }
+            //
+            // Expand children by making moves.
+            //
+            Position *next;
+            bool living[9];
+            p->livingNeighbors(living);
+            for (int d = 1; d <= 8; ++d)
+                if (p->legalmove(d) && !living[d]) {
+                    next = p->move(d);
+                    //
+                    // Only save viable positions where the intelligent
+                    // cell survives.
+                    //
+                    if (!next->nextgen())
+                        delete next;
+                    else {
+                        int bx = next->getx() / gBlkXFactor;
+                        int by = next->gety() / gBlkYFactor;
+                        gBlocks[Block::index(bx, by)].push(next);
+                    }
+            }
 
-	    //
-	    // Do dir 0 last. It's always legal, never wins, and doesn't
-	    // do a copy on move.
-	    //
-	    next = p->move(0);		// NB: next == p
-	    if (!next->nextgen())
-		delete next;
-	    else {
-		int bx = next->getx() / gBlkXFactor;
-		int by = next->gety() / gBlkYFactor;
-		gBlocks[Block::index(bx, by)].push(next);
-	    }
-	    ++exp;
-	}
+            //
+            // Do dir 0 last. It's always legal, never wins, and doesn't
+            // do a copy on move.
+            //
+            next = p->move(0);          // NB: next == p
+            if (!next->nextgen())
+                delete next;
+            else {
+                int bx = next->getx() / gBlkXFactor;
+                int by = next->gety() / gBlkYFactor;
+                gBlocks[Block::index(bx, by)].push(next);
+            }
+            ++exp;
+        }
     }
 #ifndef SINGLETHREAD
     pthread_exit(NULL);
@@ -1324,18 +1324,18 @@ int main(int argc, char **argv)
     //
     FILE *fin;
     if (argc != 3) {
-	fprintf(stderr, "Usage: %s input.txt output.txt\n", argv[0]);
-	return -1;
+        fprintf(stderr, "Usage: %s input.txt output.txt\n", argv[0]);
+        return -1;
     }
     fin = fopen(argv[1], "r");
     if (!fin) {
-	perror(argv[1]);
-	return -1;
+        perror(argv[1]);
+        return -1;
     }
     gFout = fopen(argv[2], "w");
     if (!gFout) {
-	perror(argv[2]);
-	return -1;
+        perror(argv[2]);
+        return -1;
     }
 
     //
@@ -1346,8 +1346,8 @@ int main(int argc, char **argv)
     int i, n;
     if (fscanf(fin, "%d %d\n", &gMaxY, &gMaxX) != 2) {
 errparse:
-	fprintf(stderr, "parse error on line %d of %s\n", line, argv[1]);
-	exit(-1);
+        fprintf(stderr, "parse error on line %d of %s\n", line, argv[1]);
+        exit(-1);
     }
     ++line;
 
@@ -1358,7 +1358,7 @@ errparse:
     gExtinction = (gMaxX > gMaxY ? gMaxX : gMaxY) * 4;
 
     if (fscanf(fin, "%d %d\n", &gGoalY, &gGoalX) != 2)
-	goto errparse;
+        goto errparse;
     gGoalY = YOFFSET + gGoalY - 1;
     gGoalX = XOFFSET + gGoalX - 1;
     ++line;
@@ -1376,14 +1376,14 @@ errparse:
     gBlkYFactor = (gMaxY + gBlkYDim - 1) / gBlkYDim;
     gBlkYDim = (gMaxY + gBlkYFactor - 1) / gBlkYFactor;
     gMinExpansions = 3 *
-	(gBlkXFactor > gBlkYFactor ? gBlkYFactor : gBlkXFactor);
+        (gBlkXFactor > gBlkYFactor ? gBlkYFactor : gBlkXFactor);
     // printf("Block dimensions %d x %d (%d total)\n", gBlkXDim, gBlkYDim, gBlkXDim * gBlkYDim);
     // printf("Factors %d x %d\n", gBlkXFactor, gBlkYFactor);
     // printf("Min expansions = %d\n", gMinExpansions);
     int bx, by;
     for (i = 0, by = 0; by < gBlkYDim; ++by)
-	for (bx = 0; bx < gBlkXDim; ++bx, ++i)
-	    gBlocks[i].setxy(bx, by);
+        for (bx = 0; bx < gBlkXDim; ++bx, ++i)
+            gBlocks[i].setxy(bx, by);
 
     //
     // Convert to XOFFSET, YOFFSET space (positive x, negative y)
@@ -1416,15 +1416,15 @@ errparse:
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     for (i = 0; i < NTHREADS; ++i)
-	if (pthread_create(pthreads + i, &attr, threadsearch, (void *)i) != 0)
-	    fprintf(stderr, "failed to create thread\n");
+        if (pthread_create(pthreads + i, &attr, threadsearch, (void *)i) != 0)
+            fprintf(stderr, "failed to create thread\n");
 
     //
     // Wait for all threads to exit
     //
     pthread_attr_destroy(&attr);
     for (i = 0; i < NTHREADS; ++i)
-	pthread_join(pthreads[i], NULL);
+        pthread_join(pthreads[i], NULL);
 #endif
 
     //
@@ -1434,7 +1434,7 @@ errparse:
     fprintf(stderr, "Elapsed time: %g milliseconds\n", msecs);
 #ifdef STATS
     fprintf(stderr, "Examined %ld positions (%g per msec)\n",
-	npositions, npositions / msecs);
+        npositions, npositions / msecs);
 #endif
     return 0;
 }

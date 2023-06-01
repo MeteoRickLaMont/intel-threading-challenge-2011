@@ -42,6 +42,7 @@ const bool REMOVE_REPETITIONS = true;
 
 #include <bits/stdtr1c++.h>
 #include <sys/time.h>
+#include <unistd.h>
 #include "stopwatch.h"
 #include "board.h"
 #include "parser.h"
@@ -60,12 +61,12 @@ static BoardStats gThreads[MAXTHREADS];
 // File globals. These parameters are common to all positions.
 //
 static std::atomic<const char *> gIncumbent{nullptr};
-static FILE *gFout;			// Output file
+static FILE *gFout;                     // Output file
 
 struct Move {
     Move() = default;
     Move(std::shared_ptr<Position> from, int d, int s = 0) :
-	pos(from), dir(d), score(s)
+        pos(from), dir(d), score(s)
     {}
 
     std::shared_ptr<Position> pos;
@@ -77,7 +78,7 @@ struct Move {
 // so reverse the logic here to select the lowest payoff.
 struct CLessScore {
     bool operator()(const Move &lhs, const Move &rhs) const {
-	return rhs.score < lhs.score;
+        return rhs.score < lhs.score;
     }
 };
 
@@ -97,53 +98,53 @@ static void *threadsearch(void *d)
     BoardStats *data = (BoardStats *)d;
     Move move;
     for (;;) {
-	// Choose best available move from priority queue
-	if (!gMoveQueue->try_pop(move))
-	{
-	    return NULL;	// No moves available. We're done.
-	}
+        // Choose best available move from priority queue
+        if (!gMoveQueue->try_pop(move))
+        {
+            return NULL;        // No moves available. We're done.
+        }
 #ifdef STATS
-	++data->npositions;
+        ++data->npositions;
 #endif
 
-	// Apply move and advance board to next generation
-	auto next = std::shared_ptr<Position>(move.pos->nextgen(*data, move.dir));
+        // Apply move and advance board to next generation
+        auto next = std::shared_ptr<Position>(move.pos->nextgen(*data, move.dir));
 
 #ifdef DEBUG
-	// Debugging
-	printf("Considering position:\n");
-	next->print();
+        // Debugging
+        printf("Considering position:\n");
+        next->print();
 #endif
 
-	// If the best available move is mathematically eliminated from
-	// beating the incumbent, we're done.
-	if (gIncumbent.load() && next->length() + next->distance(0) >= strlen(gIncumbent.load())) {
-	    fprintf(stderr, "Move %s + %d has score %d, length %d + distance %d >= %s\n",
-		move.pos->getMoves().c_str(), move.dir, move.score, next->length(), next->distance(0), gIncumbent.load());
-	    return NULL;
-	}
+        // If the best available move is mathematically eliminated from
+        // beating the incumbent, we're done.
+        if (gIncumbent.load() && next->length() + next->distance(0) >= strlen(gIncumbent.load())) {
+            fprintf(stderr, "Move %s + %d has score %d, length %d + distance %d >= %s\n",
+                move.pos->getMoves().c_str(), move.dir, move.score, next->length(), next->distance(0), gIncumbent.load());
+            return NULL;
+        }
 
-	// Find legal moves
-	std::string dirs = next->legalMoves(*data);
-	for (const char &c : dirs) {
-	    // Score legal moves
-	    int dist = next->distance(c);
+        // Find legal moves
+        std::string dirs = next->legalMoves(*data);
+        for (const char &c : dirs) {
+            // Score legal moves
+            int dist = next->distance(c);
 
-	    // If one is a winner, see if it's better than incumbent
-	    if (dist == 0 && (!gIncumbent.load() || next->length() + 1 < strlen(gIncumbent.load()))) {
-		std::string winner = next->getMoves();
-		winner.push_back(c);
-		const char *other = strdup(winner.c_str());
-		while (other && (!gIncumbent.load() || strlen(other) < strlen(gIncumbent.load()))) {
-		    fprintf(stderr, "Installing new incumbent %s\n", other);
-		    other = gIncumbent.exchange(other);
-		}
-	    }
-	    else {
-		// Otherwise, add legal move to priority queue
-		gMoveQueue->push(Move(next, c, next->length() + 3 * dist));
-	    }
-	}
+            // If one is a winner, see if it's better than incumbent
+            if (dist == 0 && (!gIncumbent.load() || next->length() + 1 < strlen(gIncumbent.load()))) {
+                std::string winner = next->getMoves();
+                winner.push_back(c);
+                const char *other = strdup(winner.c_str());
+                while (other && (!gIncumbent.load() || strlen(other) < strlen(gIncumbent.load()))) {
+                    fprintf(stderr, "Installing new incumbent %s\n", other);
+                    other = gIncumbent.exchange(other);
+                }
+            }
+            else {
+                // Otherwise, add legal move to priority queue
+                gMoveQueue->push(Move(next, c, next->length() + 3 * dist));
+            }
+        }
     }
 
     return NULL;
@@ -166,13 +167,13 @@ int main(int argc, char **argv)
     // Parse command line. Open input and output files.
     //
     if (argc != 3) {
-	fprintf(stderr, "Usage: %s input.txt output.txt\n", argv[0]);
-	return -1;
+        fprintf(stderr, "Usage: %s input.txt output.txt\n", argv[0]);
+        return -1;
     }
     gFout = fopen(argv[2], "w");
     if (!gFout) {
-	perror(argv[2]);
-	return -1;
+        perror(argv[2]);
+        return -1;
     }
 
     //
@@ -180,10 +181,10 @@ int main(int argc, char **argv)
     //
     std::shared_ptr<Position> initial = std::make_shared<Position>();
     {
-	TIMER_START(tLoad);
-	Parser parse(argv[1]);
-	initial.reset(parse.loadInitial());
-	TIMER_STOP(tLoad);
+        TIMER_START(tLoad);
+        Parser parse(argv[1]);
+        initial.reset(parse.loadInitial());
+        TIMER_STOP(tLoad);
     }
 
 #ifdef DEBUG
@@ -197,17 +198,17 @@ int main(int argc, char **argv)
     gMoveQueue = new priority_queue<Move, CLessScore>();
     std::string dirs = initial->legalMoves(gMainThread);
     for (const char &c : dirs) {
-	// Score legal moves
-	int dist = initial->distance(c);
+        // Score legal moves
+        int dist = initial->distance(c);
 
-	// If one is a winner, report and exit
-	if (dist == 0) {
-	    initial->output(gMainThread, gFout, c);
-	    fclose(gFout);
-	}
+        // If one is a winner, report and exit
+        if (dist == 0) {
+            initial->output(gMainThread, gFout, c);
+            fclose(gFout);
+        }
 
-	// Otherwise, add legal moves to priority queue
-	gMoveQueue->push(Move(initial, c, dist));
+        // Otherwise, add legal moves to priority queue
+        gMoveQueue->push(Move(initial, c, dist));
     }
 
 #ifdef SINGLETHREAD
@@ -224,21 +225,22 @@ int main(int argc, char **argv)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     int i;
     for (i = 0; i < nthreads; ++i)
-	if (pthread_create(pthreads + i, &attr, threadsearch, (void *)(gThreads + i)) != 0)
-	    fprintf(stderr, "failed to create thread\n");
+        if (pthread_create(pthreads + i, &attr, threadsearch, (void *)(gThreads + i)) != 0)
+            fprintf(stderr, "failed to create thread\n");
 
     //
     // Wait for all threads to exit
     //
     pthread_attr_destroy(&attr);
     for (i = 0; i < nthreads; ++i)
-	pthread_join(pthreads[i], NULL);
+        pthread_join(pthreads[i], NULL);
 #endif
 
-    if (gIncumbent.load())
-	Position::output(gMainThread, gFout, gIncumbent.load());
+    const char *s = gIncumbent.load();
+    if (s)
+        Position::output(gMainThread, gFout, strlen(s), s);
     else
-	fprintf(gFout, "No solution found\n");
+        fprintf(gFout, "No solution found\n");
     fclose(gFout);
 
     //
@@ -257,10 +259,10 @@ int main(int argc, char **argv)
     gMainThread.tOutput.show();
 #ifndef SINGLETHREAD
     for (i = 0; i < nthreads; ++i) {
-	fprintf(stderr, "Thread #%d examined %ld positions\n", i, gThreads[i].npositions);
-	gThreads[i].tNextGen.show();
-	gThreads[i].tLegalMoves.show();
-	gThreads[i].tOutput.show();
+        fprintf(stderr, "Thread #%d examined %ld positions\n", i, gThreads[i].npositions);
+        gThreads[i].tNextGen.show();
+        gThreads[i].tLegalMoves.show();
+        gThreads[i].tOutput.show();
     }
 #endif
 #endif

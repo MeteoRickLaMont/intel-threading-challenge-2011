@@ -8,11 +8,11 @@ class priority_queue : public std::priority_queue<T, std::vector<T>, Compare>
 {
 public:
     bool try_pop(T &t) {
-	if (std::priority_queue<T, std::vector<T>, Compare>::empty())
-	    return false;
-	t = std::priority_queue<T, std::vector<T>, Compare>::top();
-	std::priority_queue<T, std::vector<T>, Compare>::pop();
-	return true;
+        if (std::priority_queue<T, std::vector<T>, Compare>::empty())
+            return false;
+        t = std::priority_queue<T, std::vector<T>, Compare>::top();
+        std::priority_queue<T, std::vector<T>, Compare>::pop();
+        return true;
     }
 };
 #else

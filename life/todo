@@ -1,4 +1,3 @@
-Benchmark on benchlce6
 For singlethreaded, see if priority_queue is faster than concurrent_priority_queue
     If so, create correct one an runtime based on nthreads
 Read more about TBB allocators

@@ -1,4 +1,4 @@
-#include <cstring>		// For strlen()
+#include <cstring>              // For strlen()
 #include "board.h"
 
 #ifdef STATS
@@ -46,20 +46,19 @@ std::pair<int, int> Position::fDelta[] = {
 void Position::output(BoardStats &t, FILE *fp, const char dir)
 {
     if (dir >= '0')
-	fMoves.push_back(dir);
-    output(t, fp, std::move(fMoves));
+        fMoves.push_back(dir);
+    output(t, fp, fMoves.length(), fMoves.c_str());
 }
 
-void Position::output(BoardStats &t, FILE *fp, std::string &&s)
+// "optimal" program calls this function directly
+void Position::output(BoardStats &t, FILE *fp, int n, const char *s)
 {
     TIMER_START(t.tOutput);
-    int n;
-    const char *p = s.c_str();
-    for (n = s.length(); n > 40; n -= 40, p += 40) {
-        fwrite(p, 1, 40, fp);
+    for (; n > 40; n -= 40, s += 40) {
+        fwrite(s, 1, 40, fp);
         fputc('\n', fp);
     }
-    fwrite(p, 1, n, fp);
+    fwrite(s, 1, n, fp);
     fputc('\n', fp);
     TIMER_STOP(t.tOutput);
 }
@@ -74,32 +73,32 @@ void Position::print()
     tPos x, y;
 
     printf("%d x %d board. Intelligent cell (%d, %d). Goal (%d, %d). Moves %s\n",
-	gMaxX + 1,
-	gMaxY + 1,
-	fIntelligentX,
-	fIntelligentY,
-	gGoalX,
-	gGoalY,
-	fMoves.c_str());
+        gMaxX + 1,
+        gMaxY + 1,
+        fIntelligentX,
+        fIntelligentY,
+        gGoalX,
+        gGoalY,
+        fMoves.c_str());
     tBmp *p;
     for (y = 0, p = &fCells[0]; y < gBoardHeight; ++y) {
-	for (x = 0; x <= gMaxX; x += BMPSIZE, ++p)
-	    printFilledColumn(x, y, *p);
-	putchar('\n');
+        for (x = 0; x <= gMaxX; x += BMPSIZE, ++p)
+            printFilledColumn(x, y, *p);
+        putchar('\n');
     }
 }
 
 void Position::printFilledColumn(tPos x, tPos y, tBmp b) const
 {
     for (int i = 0; i < BMPSIZE && x <= gMaxX; ++i, ++x, b >>= 1) {
-	if (y == fIntelligentY && x == fIntelligentX)
-	    putchar('I');
-	else if (y == gGoalY && x == gGoalX)
-	    putchar((b & 1) != 0 ? 'G' : 'g');
-	else if ((b & 1) != 0)
-	    putchar('*');
-	else
-	    putchar('.');
+        if (y == fIntelligentY && x == fIntelligentX)
+            putchar('I');
+        else if (y == gGoalY && x == gGoalX)
+            putchar((b & 1) != 0 ? 'G' : 'g');
+        else if ((b & 1) != 0)
+            putchar('*');
+        else
+            putchar('.');
     }
 }
 #endif
@@ -170,110 +169,110 @@ Position *Position::nextgen(BoardStats &t, const char dir)
     curr = &fCells[0];
     next = &fCells[gBoardWidth];
     for (tPos ycurr = 0; ycurr <= gMaxY; ++ycurr) {
-	if (ycurr == 1)
-	    prev = &fCells[0];
-	if (ycurr == gMaxY)
-	    next = 0;
+        if (ycurr == 1)
+            prev = &fCells[0];
+        if (ycurr == gMaxY)
+            next = 0;
 
-	//
-	// Secondary loop scans x from left to right
-	//
-	for (tPos xmid = -BMPSIZE; xmid <= gMaxX; xmid += BMPSIZE) {
-	    tPos xfore = xmid + BMPSIZE;
+        //
+        // Secondary loop scans x from left to right
+        //
+        for (tPos xmid = -BMPSIZE; xmid <= gMaxX; xmid += BMPSIZE) {
+            tPos xfore = xmid + BMPSIZE;
 
-	    //
-	    // Set bitmaps prevfore, currfore and nextfore to next column to the right.
-	    // They are aligned vertically from top to bottom.
-	    // Some or all may be empty.
-	    //
-	    register tBmp prevfore, currfore, nextfore;
-	    prevfore = currfore = nextfore = 0;
-	    if (xfore <= gMaxX) {
-		if (prev)
-		    prevfore = *prev++;
-		currfore = *curr++;
-		if (next)
-		    nextfore = *next++;
-	    }
+            //
+            // Set bitmaps prevfore, currfore and nextfore to next column to the right.
+            // They are aligned vertically from top to bottom.
+            // Some or all may be empty.
+            //
+            register tBmp prevfore, currfore, nextfore;
+            prevfore = currfore = nextfore = 0;
+            if (xfore <= gMaxX) {
+                if (prev)
+                    prevfore = *prev++;
+                currfore = *curr++;
+                if (next)
+                    nextfore = *next++;
+            }
 
-	    if (dir != '0') {
-		//
-		// Clear old intelligent cell
-		//
-		if (xfore == xcellold) {
-		    if (ycurr-1 == yold)
-			prevfore &= xbitold;
-		    else if (ycurr == yold)
-			currfore &= xbitold;
-		    else if (ycurr+1 == yold)
-			nextfore &= xbitold;
-		}
+            if (dir != '0') {
+                //
+                // Clear old intelligent cell
+                //
+                if (xfore == xcellold) {
+                    if (ycurr-1 == yold)
+                        prevfore &= xbitold;
+                    else if (ycurr == yold)
+                        currfore &= xbitold;
+                    else if (ycurr+1 == yold)
+                        nextfore &= xbitold;
+                }
 
-		//
-		// Set new intelligent cell
-		//
-		if (xfore == xcellnew) {
-		    if (ycurr-1 == ynew)
-			prevfore |= xbitnew;
-		    else if (ycurr == ynew)
-			currfore |= xbitnew;
-		    else if (ycurr+1 == ynew)
-			nextfore |= xbitnew;
-		}
-	    }
+                //
+                // Set new intelligent cell
+                //
+                if (xfore == xcellnew) {
+                    if (ycurr-1 == ynew)
+                        prevfore |= xbitnew;
+                    else if (ycurr == ynew)
+                        currfore |= xbitnew;
+                    else if (ycurr+1 == ynew)
+                        nextfore |= xbitnew;
+                }
+            }
 
-	    if (xmid >= 0) {
-		//
-		// Let count0, count1, and count2 be bits 0-2 of the
-		// neighbor counts for the set of cells under consideration.
-		// Don't bother calculating bit 3 because it's only set
-		// when a cell has 8 neighbors. The cell will die whenever
-		// bit 2 gets set (4 or more neighbors) so catch large
-		// counts at that point.
-		//
-		tBmp mid0, mid1, fore0, fore1;
-		tBmp count0, count1, count2a, count2b;
-		ADD3(fore0, fore1, ROR(prevmid, prevfore),
-				   ROR(currmid, currfore),
-				   ROR(nextmid, nextfore));
-		ADD2(mid0, mid1, prevmid, nextmid);
-		ADD3(count0, count1, fore0, mid0, rear0);
-		ADD3(count1, count2a, count1, fore1, rear1);
-		ADD2(count1, count2b, count1, mid1);
+            if (xmid >= 0) {
+                //
+                // Let count0, count1, and count2 be bits 0-2 of the
+                // neighbor counts for the set of cells under consideration.
+                // Don't bother calculating bit 3 because it's only set
+                // when a cell has 8 neighbors. The cell will die whenever
+                // bit 2 gets set (4 or more neighbors) so catch large
+                // counts at that point.
+                //
+                tBmp mid0, mid1, fore0, fore1;
+                tBmp count0, count1, count2a, count2b;
+                ADD3(fore0, fore1, ROR(prevmid, prevfore),
+                                   ROR(currmid, currfore),
+                                   ROR(nextmid, nextfore));
+                ADD2(mid0, mid1, prevmid, nextmid);
+                ADD3(count0, count1, fore0, mid0, rear0);
+                ADD3(count1, count2a, count1, fore1, rear1);
+                ADD2(count1, count2b, count1, mid1);
 
-		//
-		// Let bmp be the new state of the cells. OR the current
-		// state of the cell to the neighbor count to handle both
-		// the living rule (2 or 3 neighbors) and the spontaneous
-		// generation rule (3 neighbors).
-		//
-		tBmp bmp = (count0 | currmid) & count1 &
-		    ~count2a & ~count2b;	// Mask those with 4+ neighbors
+                //
+                // Let bmp be the new state of the cells. OR the current
+                // state of the cell to the neighbor count to handle both
+                // the living rule (2 or 3 neighbors) and the spontaneous
+                // generation rule (3 neighbors).
+                //
+                tBmp bmp = (count0 | currmid) & count1 &
+                    ~count2a & ~count2b;        // Mask those with 4+ neighbors
 
-		//
-		// Clip bmp to right boundary and output it.
-		//
-		if (xmid == gRightx)
-		    bmp &= gRightmask;
-		*p++ = bmp;
-	    }
+                //
+                // Clip bmp to right boundary and output it.
+                //
+                if (xmid == gRightx)
+                    bmp &= gRightmask;
+                *p++ = bmp;
+            }
 
-	    //
-	    // Pre-calculate rear neighbor counts for next iteration.
-	    // This way we don't need to keep rear bitmaps around.
-	    //
-	    ADD3(rear0, rear1, ROL(prevfore, prevmid),
-			       ROL(currfore, currmid),
-			       ROL(nextfore, nextmid));
+            //
+            // Pre-calculate rear neighbor counts for next iteration.
+            // This way we don't need to keep rear bitmaps around.
+            //
+            ADD3(rear0, rear1, ROL(prevfore, prevmid),
+                               ROL(currfore, currmid),
+                               ROL(nextfore, nextmid));
 
-	    //
-	    // Advance to the right.
-	    // Foreward bitmaps become middle bitmaps.
-	    //
-	    prevmid = prevfore;
-	    currmid = currfore;
-	    nextmid = nextfore;
-	}
+            //
+            // Advance to the right.
+            // Foreward bitmaps become middle bitmaps.
+            //
+            prevmid = prevfore;
+            currmid = currfore;
+            nextmid = nextfore;
+        }
     }
 
     TIMER_STOP(t.tNextGen);
@@ -300,8 +299,8 @@ std::string Position::legalMoves(BoardStats &t) const
     const tBmp *prev, *curr, *next;
 
     tPos ycurr;
-    tPos ylast = 1;				// Previous y value output
-    tPos xdiv = fIntelligentX & XCELLMASK;	// Cache intelligent location
+    tPos ylast = 1;                             // Previous y value output
+    tPos xdiv = fIntelligentX & XCELLMASK;      // Cache intelligent location
     tBmp xmask = ~(1ULL << (fIntelligentX & XBMPMASK));
 
     std::string directions;
@@ -333,120 +332,120 @@ std::string Position::legalMoves(BoardStats &t) const
     curr = (ynclamp < 0) ? 0 : &fCells[ynclamp * gBoardWidth];
     next = &fCells[(ynclamp + 1) * gBoardWidth];
     for (ycurr = ynclamp; ycurr <= ysclamp; ++ycurr) {
-	if (ycurr == 1)
-	    prev = &fCells[0];
-	if (ycurr == gMaxY)
-	    next = 0;
+        if (ycurr == 1)
+            prev = &fCells[0];
+        if (ycurr == gMaxY)
+            next = 0;
 
-	//
-	// Secondary loop scans x from left to right
-	//
-	for (tPos xmid = -BMPSIZE; xmid <= gMaxX; xmid += BMPSIZE) {
-	    //
-	    // Set bitmaps prevfore, currfore and nextfore.
-	    // They are aligned vertically from top to bottom.
-	    // Some or all may be empty.
-	    //
-	    register tBmp prevfore, currfore, nextfore;
-	    prevfore = currfore = nextfore = 0;
-	    if (xmid + BMPSIZE <= gMaxX) {
-		if (prev)
-		    prevfore = *prev++;
-		currfore = *curr++;
-		if (next)
-		    nextfore = *next++;
-	    }
+        //
+        // Secondary loop scans x from left to right
+        //
+        for (tPos xmid = -BMPSIZE; xmid <= gMaxX; xmid += BMPSIZE) {
+            //
+            // Set bitmaps prevfore, currfore and nextfore.
+            // They are aligned vertically from top to bottom.
+            // Some or all may be empty.
+            //
+            register tBmp prevfore, currfore, nextfore;
+            prevfore = currfore = nextfore = 0;
+            if (xmid + BMPSIZE <= gMaxX) {
+                if (prev)
+                    prevfore = *prev++;
+                currfore = *curr++;
+                if (next)
+                    nextfore = *next++;
+            }
 
-	    //
-	    // Mask out intelligent cell from fore.
-	    // It will automatically slide to mid later.
-	    //
-	    if (xmid + BMPSIZE == xdiv) {
-		if (ycurr-1 == fIntelligentY)
-		    prevfore &= xmask;
-		else if (ycurr == fIntelligentY)
-		    currfore &= xmask;
-		else if (ycurr+1 == fIntelligentY)
-		    nextfore &= xmask;
-	    }
+            //
+            // Mask out intelligent cell from fore.
+            // It will automatically slide to mid later.
+            //
+            if (xmid + BMPSIZE == xdiv) {
+                if (ycurr-1 == fIntelligentY)
+                    prevfore &= xmask;
+                else if (ycurr == fIntelligentY)
+                    currfore &= xmask;
+                else if (ycurr+1 == fIntelligentY)
+                    nextfore &= xmask;
+            }
 
-	    if (xmid >= 0) {
-		//
-		// Let count0, count1, and count2 be bits 0-2 of the
-		// neighbor counts for the set of cells under consideration.
-		// Don't bother calculating bit 3 because it's only set
-		// when a cell has 8 neighbors. The cell will die whenever
-		// bit 2 gets set (4 or more neighbors) so catch large
-		// counts at that point.
-		//
-		tBmp mid0, mid1, fore0, fore1;
-		tBmp count0, count1, count2a, count2b;
-		ADD3(fore0, fore1, ROR(prevmid, prevfore),
-				   ROR(currmid, currfore),
-				   ROR(nextmid, nextfore));
-		ADD2(mid0, mid1, prevmid, nextmid);
-		ADD3(count0, count1, fore0, mid0, rear0);
-		ADD3(count1, count2a, count1, fore1, rear1);
-		ADD2(count1, count2b, count1, mid1);
+            if (xmid >= 0) {
+                //
+                // Let count0, count1, and count2 be bits 0-2 of the
+                // neighbor counts for the set of cells under consideration.
+                // Don't bother calculating bit 3 because it's only set
+                // when a cell has 8 neighbors. The cell will die whenever
+                // bit 2 gets set (4 or more neighbors) so catch large
+                // counts at that point.
+                //
+                tBmp mid0, mid1, fore0, fore1;
+                tBmp count0, count1, count2a, count2b;
+                ADD3(fore0, fore1, ROR(prevmid, prevfore),
+                                   ROR(currmid, currfore),
+                                   ROR(nextmid, nextfore));
+                ADD2(mid0, mid1, prevmid, nextmid);
+                ADD3(count0, count1, fore0, mid0, rear0);
+                ADD3(count1, count2a, count1, fore1, rear1);
+                ADD2(count1, count2b, count1, mid1);
 
-		//
-		// Let bmp be the legal places to move. Exclude any bits
-		// set in the current state because they're already
-		// occupied. Include those with bit 1 of the neighbor
-		// count set because that's 2 or 3. Exclude those with
-		// bit 2 set - too many neighbors.
-		//
-		tBmp bmp = ~currmid & count1 &
-		    ~count2a & ~count2b;	// Mask those with 4+ neighbors
+                //
+                // Let bmp be the legal places to move. Exclude any bits
+                // set in the current state because they're already
+                // occupied. Include those with bit 1 of the neighbor
+                // count set because that's 2 or 3. Exclude those with
+                // bit 2 set - too many neighbors.
+                //
+                tBmp bmp = ~currmid & count1 &
+                    ~count2a & ~count2b;        // Mask those with 4+ neighbors
 
-		//
-		// If bmp is non-zero, examine it for 1 bits in
-		// vicinity of intelligent cell. Save legal moves
-		// in directions string.
-		//
-		if (bmp) {
-		    if (ycurr == yn) {
-			if (xmid == xwdiv && (bmp & xwmask) != 0)
-			    directions.push_back('1');
-			if (xmid == xidiv && (bmp & ximask) != 0)
-			    directions.push_back('2');
-			if (xmid == xediv && (bmp & xemask) != 0)
-			    directions.push_back('3');
-		    }
-		    else if (ycurr == fIntelligentY) {
-			if (xmid == xwdiv && (bmp & xwmask) != 0)
-			    directions.push_back('8');
-			if (xmid == xidiv && (bmp & ximask) != 0)
-			    directions.push_back('0');
-			if (xmid == xediv && (bmp & xemask) != 0)
-			    directions.push_back('4');
-		    }
-		    else if (ycurr == ys) {
-			if (xmid == xwdiv && (bmp & xwmask) != 0)
-			    directions.push_back('7');
-			if (xmid == xidiv && (bmp & ximask) != 0)
-			    directions.push_back('6');
-			if (xmid == xediv && (bmp & xemask) != 0)
-			    directions.push_back('5');
-		    }
-		}
-	    }
+                //
+                // If bmp is non-zero, examine it for 1 bits in
+                // vicinity of intelligent cell. Save legal moves
+                // in directions string.
+                //
+                if (bmp) {
+                    if (ycurr == yn) {
+                        if (xmid == xwdiv && (bmp & xwmask) != 0)
+                            directions.push_back('1');
+                        if (xmid == xidiv && (bmp & ximask) != 0)
+                            directions.push_back('2');
+                        if (xmid == xediv && (bmp & xemask) != 0)
+                            directions.push_back('3');
+                    }
+                    else if (ycurr == fIntelligentY) {
+                        if (xmid == xwdiv && (bmp & xwmask) != 0)
+                            directions.push_back('8');
+                        if (xmid == xidiv && (bmp & ximask) != 0)
+                            directions.push_back('0');
+                        if (xmid == xediv && (bmp & xemask) != 0)
+                            directions.push_back('4');
+                    }
+                    else if (ycurr == ys) {
+                        if (xmid == xwdiv && (bmp & xwmask) != 0)
+                            directions.push_back('7');
+                        if (xmid == xidiv && (bmp & ximask) != 0)
+                            directions.push_back('6');
+                        if (xmid == xediv && (bmp & xemask) != 0)
+                            directions.push_back('5');
+                    }
+                }
+            }
 
-	    //
-	    // Pre-calculate rear neighbor counts for next iteration.
-	    // This way we don't need to keep rear bitmaps around.
-	    //
-	    ADD3(rear0, rear1, ROL(prevfore, prevmid),
-			       ROL(currfore, currmid),
-			       ROL(nextfore, nextmid));
+            //
+            // Pre-calculate rear neighbor counts for next iteration.
+            // This way we don't need to keep rear bitmaps around.
+            //
+            ADD3(rear0, rear1, ROL(prevfore, prevmid),
+                               ROL(currfore, currmid),
+                               ROL(nextfore, nextmid));
 
-	    //
-	    // Advance to the right.
-	    // Foreward bitmaps become middle bitmaps.
-	    //
-	    prevmid = prevfore;
-	    currmid = currfore;
-	    nextmid = nextfore;
+            //
+            // Advance to the right.
+            // Foreward bitmaps become middle bitmaps.
+            //
+            prevmid = prevfore;
+            currmid = currfore;
+            nextmid = nextfore;
         }
     }
 
