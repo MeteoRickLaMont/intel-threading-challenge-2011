@@ -4,9 +4,7 @@ Read more about TBB allocators
 Static vs dynamic libstdc++
 Flesh out optimal incumbent.
 Optimal main thread to groom back of priority queue.
-Evaluate Closed Set.
 Figure out best way to install TBB
-May get better performance with aligned fCells array, especially SSE
 Also implement beam search. See ../square/psyho.cpp
     Always search the same generation
     A move is a direction and pointer to parent board
@@ -16,6 +14,14 @@ SSE for 128 cells at a time
 Publish on github
 
 Done:
+May get better performance with aligned fCells array, especially SSE
+Evaluate Closed Set.
+    For greedy it's 34% slower.
+    Checking for static move '0' is a good approximation. Small win.
+    Over one run of 10 use cases:
+        9 positions are culled
+        7 of which are static (move '0')
+    May be useful for optimal
 Have legalMoves return a std::string of '0', '4', etc.
 Use lookup table for deltax, deltay in distance and nextgen
 TBB scalable allocator

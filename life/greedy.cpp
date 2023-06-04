@@ -43,12 +43,12 @@ const int MAXTHREADS = 80;
 #include "priority_queue.h"
 
 #ifdef __cpp_lib_hardware_interference_size
-    using std::hardware_constructive_interference_size;
-    using std::hardware_destructive_interference_size;
+using std::hardware_constructive_interference_size;
+using std::hardware_destructive_interference_size;
 #else
-    // 64 bytes on x86-64 | L1_CACHE_BYTES | L1_CACHE_SHIFT | __cacheline_aligned | ...
-    constexpr std::size_t hardware_constructive_interference_size = 64;
-    constexpr std::size_t hardware_destructive_interference_size = 64;
+// 64 bytes on x86-64 | L1_CACHE_BYTES | L1_CACHE_SHIFT | __cacheline_aligned | ...
+constexpr std::size_t hardware_constructive_interference_size = 64;
+constexpr std::size_t hardware_destructive_interference_size = 64;
 #endif
 
 #ifdef STATS
@@ -70,6 +70,12 @@ static std::array<ThreadLocal, MAXTHREADS> gThreads;
 
 static std::atomic<bool> gFound{false}; // true when solution found
 static std::atomic<int> gInFlight{0};   // number of threads working on a Position
+#ifdef STATS
+static std::atomic<int> gCulled{0};
+#ifdef CLOSEDSET
+static std::atomic<int> gStatic{0};
+#endif
+#endif
 static timeval begin;
 #ifdef SINGLETHREAD
 static int nthreads = 1;
@@ -101,7 +107,10 @@ struct CLessScore {
 // Make this a pointer so that it won't be destructed when one thread
 // calls exit(). Otherwise, the other threads that are still working
 // could have memory errors during program shutdown.
-priority_queue<Move, CLessScore> *gMoveQueue;
+priority_queue<Move, CLessScore> *gOpenSet;
+#ifdef CLOSEDSET
+hash_set *gClosedSet;
+#endif
 
 inline double elapsed(timeval &then)
 {
@@ -122,6 +131,10 @@ static void print_stats()
     // Additional statistics if requested
     //
 #ifdef STATS
+    fprintf(stderr, "Culled\t\t%d\n", gCulled.load());
+#ifdef CLOSEDSET
+    fprintf(stderr, "Static\t\t%d\n", gStatic.load());
+#endif
     tGlobal.stop();
     tGlobal.show();
     tLoad.show();
@@ -164,7 +177,7 @@ static void *threadsearch(void *d)
         // Choose best available move from priority queue
         TIMER_START(stats->tPop);
         ++gInFlight;
-        if (gMoveQueue->try_pop(move))
+        if (gOpenSet->try_pop(move))
             TIMER_STOP(stats->tPop);
         else {
             TIMER_STOP(stats->tPop);
@@ -183,33 +196,55 @@ static void *threadsearch(void *d)
 
         // Apply move and advance board to next generation
         Position *next = move.pos->nextgen(*stats, move.dir);
-
+#ifdef CLOSEDSET
+        if (gClosedSet->contains(*next)) {
+#ifdef STATS
+            if (move.dir == '0')
+                ++gStatic;
+#endif
+#else
+        if (move.dir == '0' && *next == *move.pos) {
+#endif
+#ifdef STATS
+            ++gCulled;
+#endif
 #ifdef DEBUG
-        // Debugging
-        printf("Considering position:\n");
-        next->print();
+            printf("Culled this position:\n");
+            next->print();
+#endif
+            delete next;
+        } // }
+        else {
+#ifdef CLOSEDSET
+            gClosedSet->insert(*next);
+#endif
+#ifdef DEBUG
+            // Debugging
+            printf("Considering position:\n");
+            next->print();
 #endif
 
-        // Find legal moves
-        std::string dirs = next->legalMoves(*stats);
-        for (const char c : dirs) {
-            // Score legal moves
-            int dist = next->distance(c);
+            // Find legal moves
+            std::string dirs = next->legalMoves(*stats);
+            for (const char c : dirs) {
+                // Score legal moves
+                int dist = next->distance(c);
 
-            // If one is a winner, report and exit
-            if (dist == 0) {
-                if (gFound.exchange(true))
-                    return NULL;        // Already another winner
-                next->output(*stats, gFout, c);
-                TIMER_STOP(stats->tPart2);
-                print_stats();
-                exit(0);
+                // If one is a winner, report and exit
+                if (dist == 0) {
+                    if (gFound.exchange(true))
+                        return NULL;        // Already another winner
+                    next->output(*stats, gFout, c);
+                    TIMER_STOP(stats->tPart2);
+                    print_stats();
+                    exit(0);
+                }
+
+                // Otherwise, add legal moves to priority queue
+                TIMER_START(stats->tPush);
+                gOpenSet->push(Move(next, c, next->length() + weight * dist));
+                TIMER_STOP(stats->tPush);
             }
-
-            // Otherwise, add legal moves to priority queue
-            TIMER_START(stats->tPush);
-            gMoveQueue->push(Move(next, c, next->length() + weight * dist));
-            TIMER_STOP(stats->tPush);
         }
         --gInFlight;
     }
@@ -274,7 +309,10 @@ usage:
     //
     // Prepare shared data for threads when they warm up.
     //
-    gMoveQueue = new priority_queue<Move, CLessScore>();
+    gOpenSet = new priority_queue<Move, CLessScore>();
+#ifdef CLOSEDSET
+    gClosedSet = new hash_set();
+#endif
     ++gInFlight;        // Main thread while generating seed positions
 
     //
@@ -330,6 +368,9 @@ usage:
     // Seed priority queue with legal moves from initial position.
     //
     TIMER_START(tSeed);
+#ifdef CLOSEDSET
+    gClosedSet->insert(*initial);
+#endif
     std::string dirs = initial->legalMoves(gThreads[0].stats);
     for (const char c : dirs) {
         // Score legal moves
@@ -344,7 +385,7 @@ usage:
 
         // Otherwise, add legal moves to priority queue
         TIMER_START(gThreads[0].stats.tPush);
-        gMoveQueue->push(Move(initial, c, dist));
+        gOpenSet->push(Move(initial, c, dist));
         TIMER_STOP(gThreads[0].stats.tPush);
     }
     --gInFlight;

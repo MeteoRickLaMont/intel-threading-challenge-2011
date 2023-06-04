@@ -4,7 +4,14 @@
 #include <limits.h>            // For CHAR_BIT
 #include <string>
 #include <vector>
+#include "MurmurHash3.h"
 #include "stopwatch.h"
+
+#ifdef CLOSEDSET
+#include "tbb/concurrent_unordered_set.h"
+using tbb::concurrent_unordered_set;
+#endif
+
 #ifdef STATS
 extern Stopwatch tLoad;
 #endif
@@ -98,6 +105,19 @@ public:
     std::string getMoves() const { return fMoves; }
     uint32_t length() const { return fMoves.length(); }
     uint32_t distance(const char dir) const;
+    inline uint32_t hash() const {
+        uint32_t out;
+        MurmurHash3_x86_32(&fCells[0], fCells.size() * sizeof(tBmp), 0x077CB531U, &out);
+        return out;
+    }
+    inline friend bool operator==(const Position &lhs, const Position &rhs) {
+        return
+#ifdef CLOSEDSET
+           lhs.fIntelligentX == rhs.fIntelligentX &&
+           lhs.fIntelligentY == rhs.fIntelligentY &&
+#endif
+           lhs.fCells == rhs.fCells;
+    }
 
 private:
     std::vector<tBmp> fCells;           // Game of Life board
@@ -167,5 +187,25 @@ private:
     void printFilledColumn(tPos x, tPos y, tBmp b) const;
 #endif
 };
+
+#ifdef CLOSEDSET
+// Define hashing operation for Position
+struct CHashPosition {
+    size_t operator()(const Position &p) const
+    {
+        return p.hash();
+    }
+};
+
+// Define comparison operation for Position
+struct CEqualPosition {
+    bool operator()(const Position &lhs, const Position &rhs) const
+    {
+        return lhs == rhs;
+    }
+};
+
+using hash_set = concurrent_unordered_set<Position, CHashPosition, CEqualPosition>;
+#endif
 
 #endif

@@ -1,11 +1,16 @@
 CXX=g++
-CXXFLAGS+=-O3 -DNDEBUG -msse2
+CXXFLAGS+=-O3 -std=c++11 -DNDEBUG -msse2
 # CXXFLAGS+=-g
 OBJS=main.o primes.o powers.o searches.o output.o
 LIBS=-lpthread
 
+all: primesums jmfernandez
+
 primesums: $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(LIBS)
+
+jmfernandez: jmfernandez.o
+	$(CXX) $(CXXFLAGS) -o $@ jmfernandez.o -ltbb -ltbbmalloc
 
 check: primesums
 	./primesums 1 29 6 sumsout.txt
