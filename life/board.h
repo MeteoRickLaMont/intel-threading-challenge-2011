@@ -4,12 +4,17 @@
 #include <limits.h>            // For CHAR_BIT
 #include <string>
 #include <vector>
-#include "MurmurHash3.h"
 #include "stopwatch.h"
 
-#ifdef CLOSEDSET
-#include "tbb/concurrent_unordered_set.h"
-using tbb::concurrent_unordered_set;
+#include <tbb/concurrent_priority_queue.h>
+
+#ifdef __cpp_lib_hardware_interference_size
+using std::hardware_constructive_interference_size;
+using std::hardware_destructive_interference_size;
+#else
+// 64 bytes on x86-64 | L1_CACHE_BYTES | L1_CACHE_SHIFT | __cacheline_aligned | ...
+constexpr std::size_t hardware_constructive_interference_size = 64;
+constexpr std::size_t hardware_destructive_interference_size = 64;
 #endif
 
 #ifdef STATS
@@ -22,8 +27,7 @@ extern Stopwatch tLoad;
 // the leftmost cell is 1. To shift right on-screen shift the bitmap left.
 // Note that major x coordinates are always factors of BMPSIZE (32 or 64).
 //
-// Sort cells by increasing y values. Subsort by increasing x (left to
-// right).
+// Sort cells by increasing y values. Subsort by increasing x (left to right).
 //
 using tPos = int32_t;
 using tBmp = uint64_t;
@@ -63,8 +67,7 @@ public:
     constexpr static tBmp XBMPMASK = BMPSIZE - 1;
     constexpr static tBmp XCELLMASK = ~XBMPMASK;
 
-    Position()
-    {}
+    Position() {}
     Position(const Position &rhs) :
         fCells(rhs.fCells),
         fIntelligentX(rhs.fIntelligentX),
@@ -76,6 +79,7 @@ public:
         fIntelligentX(xintel - 1),
         fCells(cells)
     {}
+    ~Position() {}
 
     static void setDimensions(tPos ydim, tPos xdim) {
         gBoardHeight = ydim;
@@ -101,26 +105,17 @@ public:
 #endif
 
     Position *nextgen(BoardStats &t, const char dir);
-    std::string legalMoves(BoardStats &t) const;
+    std::string legalDirs(BoardStats &t) const;
     std::string getMoves() const { return fMoves; }
     uint32_t length() const { return fMoves.length(); }
     uint32_t distance(const char dir) const;
-    inline uint32_t hash() const {
-        uint32_t out;
-        MurmurHash3_x86_32(&fCells[0], fCells.size() * sizeof(tBmp), 0x077CB531U, &out);
-        return out;
-    }
     inline friend bool operator==(const Position &lhs, const Position &rhs) {
-        return
-#ifdef CLOSEDSET
-           lhs.fIntelligentX == rhs.fIntelligentX &&
-           lhs.fIntelligentY == rhs.fIntelligentY &&
-#endif
-           lhs.fCells == rhs.fCells;
+        return lhs.fCells == rhs.fCells;
     }
 
 private:
-    std::vector<tBmp> fCells;           // Game of Life board
+    // Game of Life board
+    alignas(hardware_destructive_interference_size) std::vector<tBmp> fCells;
 
     //
     // Specific to maze of life extension
@@ -188,24 +183,35 @@ private:
 #endif
 };
 
-#ifdef CLOSEDSET
-// Define hashing operation for Position
-struct CHashPosition {
-    size_t operator()(const Position &p) const
-    {
-        return p.hash();
-    }
-};
-
-// Define comparison operation for Position
-struct CEqualPosition {
-    bool operator()(const Position &lhs, const Position &rhs) const
-    {
-        return lhs == rhs;
-    }
-};
-
-using hash_set = concurrent_unordered_set<Position, CHashPosition, CEqualPosition>;
+#ifdef DONTLEAK
+using PositionPtr = std::shared_ptr<Position>;
+#define MAKE_POSITION_PTR(p) std::make_shared<Position>(p)
+#else
+#define MAKE_POSITION_PTR(p) (p)
+using PositionPtr = Position *;
 #endif
+
+struct Move {
+    Move() { pos = nullptr; }
+    Move(PositionPtr from, char d, float s = 0) :
+        pos(from), dir(d), score(s)
+    {}
+
+    bool operator>(const Move &rhs) const { return score > rhs.score; }
+
+    PositionPtr pos;
+    float score;
+    char dir;
+};
+
+// concurrent_priority_queue puts the highest value first,
+// so reverse the logic here to select the lowest payoff.
+struct CLessScore {
+    bool operator()(const Move &lhs, const Move &rhs) const {
+        return rhs.score < lhs.score;
+    }
+};
+
+using move_priority_queue = tbb::concurrent_priority_queue<Move, CLessScore>;
 
 #endif

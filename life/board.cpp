@@ -286,7 +286,7 @@ Position *Position::nextgen(BoardStats &t, const char dir)
 // 2. Moves to a cell that is currently unoccupied
 // 3. Will survive next generation
 //
-std::string Position::legalMoves(BoardStats &t) const
+std::string Position::legalDirs(BoardStats &t) const
 {
     TIMER_START(t.tLegalMoves);
     //
