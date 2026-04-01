@@ -106,7 +106,7 @@ public:
 
     Position *nextgen(BoardStats &t, const char dir);
     std::string legalDirs(BoardStats &t) const;
-    std::string getMoves() const { return fMoves; }
+    const std::string &getMoves() const { return fMoves; }
     uint32_t length() const { return fMoves.length(); }
     uint32_t distance(const char dir) const;
     inline friend bool operator==(const Position &lhs, const Position &rhs) {

@@ -19,6 +19,7 @@ WEIGHT=${4:--1}
 #     Print statistics (average, stddev, etc.)
 #
 
+export LD_LIBRARY_PATH=/home/lamont/wjakob/tbb/build/
 jmfernandez() {
     (./jmfernandez $1) | awk '
         /Time elapsed/ { time = $3 }

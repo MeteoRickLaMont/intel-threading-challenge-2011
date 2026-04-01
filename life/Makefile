@@ -2,7 +2,7 @@ CC=g++
 CXX=g++
 CXXFLAGS=-O3 -std=c++11 -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free # -DDONTLEAK -DSTATS -DDEBUG
 OBJS=greedy.o beam.o nblock.o jmfernandez.o board.o parser.o scanner.o
-LIBS=-lpthread -lstdc++ -latomic -lrt
+LIBS=-lpthread -lstdc++ -lrt
 
 all: greedy beam
 
