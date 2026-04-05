@@ -19,7 +19,15 @@ The 2020 and 2023 rewrites share helper files [board.cpp](board.cpp), [parser.cp
 
 It was announced in advance that scoring would be based on program speed and that a bonus was available for programs that found the optimal (shortest) path. Some inferred the weighting would be 80% speed and 20% optimal. It came as a shock when the points for finding the optimal solution was equal to the points for coming in first place. It was essentially 50% speed and 50% optimal except only one competitor could come in first place whereas the full bonus for optimal path could be awarded to all competitors regardless of speed.
 
-First and second place went to the two programs that tried to find the optimal path. One of the ten test cases was sufficiently complex that these two programs failed to terminate within one minute and scored zero. They made up for it on the other nine test cases. Meanwhile, the fastest submission in the field by Miguel Fernandez only came in third place.
+Full scoring was as follows:
+* 50 points for submitting an entry
+* 50 points if it compiled, ran, and solved the sample problem
+* 25 points for posting 5 comments in the forums
+* 5 points on each test case for finding the optimal path on a problem
+* 5/rank points each test case for fastest solutions (5, 2.5, 1.667, etc.)
+* 225 perfect score, if both fastest and optimal on each problem
+
+First and second place went to "VoVanx86" and "kivyakin" who tried to find the optimal path. One of the ten test cases was sufficiently complex that these two programs failed to terminate within one minute and scored zero. They made up for it on the other nine test cases. Meanwhile, the fastest submission in the field by Miguel Fernandez only came in third place.
 
 Miguel's approach was to adapt the [A* search algorithm](https://en.wikipedia.org/wiki/A*_search_algorithm) to The Maze of Life. It was designed for finding the shortest path through a static graph but nicely fit the constantly changing minefield that is the Game of Life.
 
@@ -28,15 +36,15 @@ Rick LaMont's solution was based on the lesser known paper [Parallel Best-N Bloc
 With the benefit of hindsight of the ten test cases and how it would be scored, Rick set out to write a new solution that would build upon the best elements of his and Miguel's submissions. Here are the main improvements he made:
 * Miguel had the right idea with the A* algorithm but drop the closed set. With a constantly changing graph, the odds of repeating a previous board position a too low to merit consideration.
 * Rick had the right game board data structure except it was designed for large, sparse boards. Change it to fixed height and width. Do not skip over empty vertical or horizontal areas.
-- Loading the input data file is a bottleneck. Use a custom algorithm to parse positive integers quickly.
-- Exit immediately when solution is found. Don't wait for threads to join.
-- Tune the number of threads to the size of problem. Single-thread for very small inputs.
-- Spawn one thread to start the other threads while the main thread is parsing file, etc.
-- No mutexes. Use atomics and TBB's lock free concurrent_priority_queue<>
-- Intentionally leak resources including memory. When a solution is found, don't waste time cleaning up.
-- Store board + move in the priority queue. Apply the move and do next generation of Game of Life upon pop. This seeds the priority queue faster, especially from the initial position. It also detects a winning move without having to push and pop the priority queue.
-- Prevent false sharing by putting each thread's local data in a separate cache line.
-- Use TBB scalable allocator (still to-do!)
+* Loading the input data file is a bottleneck. Use a custom algorithm to parse positive integers quickly.
+* Exit immediately when solution is found. Don't wait for threads to join.
+* Tune the number of threads to the size of problem. Single-thread for very small inputs.
+* Spawn one thread to start the other threads while the main thread is parsing file, etc.
+* No mutexes. Use atomics and TBB's lock free `concurrent_priority_queue<>`
+* Intentionally leak resources including memory. When a solution is found, don't waste time cleaning up.
+* Store board + move in the priority queue. Apply the move and do next generation of Game of Life upon pop. This seeds the priority queue faster, especially from the initial position. It also detects a winning move without having to push and pop the priority queue.
+* Prevent false sharing by putting each thread's local data in a separate cache line.
+* Use TBB scalable allocator (still to-do!)
 
 The result of the above observations was greedy.cpp, a truly fast scalable multi-threaded solution optimized for the ten scoring inputs. One can modify this algorithm to search for shortes path solutions but it doesn't scale well and blows up on one of the ten cases (just like the first and second place finishers found out).
 
@@ -64,14 +72,14 @@ The main algorithm uses a priority queue of positions, sorted by payoff, to work
 ```
     push initial position onto the heap
     while position at top of heap is not at the goal
-	pop position p from the heap
-	for direction d in 0 to 8
-	    if p + d is in bounds and p[d] is a free cell
-		position n = p with intelligent cell moved in direction d
-		advance n to next generation
-		if the intelligent cell survived
-		    push n onto the heap
-	delete p
+        pop position p from the heap
+        for direction d in 0 to 8
+            if p + d is in bounds and p[d] is a free cell
+                position n = p with intelligent cell moved in direction d
+                advance n to next generation
+                if the intelligent cell survived
+                    push n onto the heap
+        delete p
     report the solution
 ```
 That's my basic single-threaded solution. With the greedy payoff function it finds sub-optimal solutions quickly. With the optimal payoff, it always finds the shortest path but can take a long time depending on the complexity of the problem.
@@ -81,8 +89,6 @@ All attempts to multithread this thing only made it slower. The more threads I s
 My first attempt at multi-threading simply protected the heap with a mutex and turned all the threads loose on the main loop. When that failed, I assumed it was due to contention for the mutex.
 
 After a series of other failures, I found a paper on Parallel Best NBlock First by Ethan Burns et al. PBNF is a clever algorithm that can be appliesd to Maze of Life. I won't cover the whole thing but recommend reading the paper(s).
-http://www.jair.org/papers/paper3094.html
-http://www.cs.unh.edu/~eaburns/
 
 The basic idea is that the game grid is divided into equal-sized rectangular zones (typically squares), say of size 8x8 cells. Each thread stakes out a zone and only processes positions where the intelligent cell is in its own zone. The active zones are spaced sufficiently far apart so that if the intelligent cell moves out of one thread's zone, it will enter a passive zone (i.e. one not currently being processed by a thread). This precludes the need for mutexes on most data structures. Periodically each thread checks to see if there is a more promising zone that it should be working on.
 

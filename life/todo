@@ -2,39 +2,3 @@ Read more about TBB allocators
 Static vs dynamic libstdc++
 Figure out best way to install TBB
 SSE for 128 cells at a time
-Publish on github
-
-Done:
-Also implement beam search.
-Flesh out optimal incumbent.
-Optimal main thread to groom back of priority queue.
-For singlethreaded, see if priority_queue is faster than concurrent_priority_queue
-May get better performance with aligned fCells array, especially SSE
-Evaluate Closed Set.
-    Checking for static move '0' is a good approximation. Small win.
-Have legalMoves return a std::string of '0', '4', etc.
-Use lookup table for deltax, deltay in distance and nextgen
-TBB scalable allocator
-Parse file and start threads in parallel.
-Compare against jmfernandez and my own submission
-Tune solution, specifically the multiplier on moves vs distance
-Benchmark with multiple runs, disregarding high and low.
-Intentionally leak resources. Leak memory. No smart pointers. Don't join threads.
-Put common code in common files.
-Implement A* algorithm.
-Download contest problems
-    Done: 01*.txt through 10*.txt in this directory
-Download results
-    Winners were VoVanx86 (optimal), kivyakin (optimal) and jmfernandez (fast)
-Download source code if still available
-    jmfernandez solution in this directory
-Find dev platform with gcc and multiple cores:
-    dotc.pairserver.com has 24 cores
-    BenchLCE2 has 32
-Scoring:
-    50 points for submitting an entry
-    50 points if it compiled, ran, and solved the sample problem
-    25 points for posting 5 comments in the forums
-    5 points each for finding the optimal path on a problem
-    5/rank points each for fastest solutions (5, 2.5, 1.667, etc.)
-    225 perfect score if both fastest and optimal on each problem
