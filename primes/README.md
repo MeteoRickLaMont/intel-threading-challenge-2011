@@ -51,19 +51,19 @@ The second round is pretty boring and I do expect to win. It's a math problem: s
 **6/14/2011:**
 The second round (Consecutive Primes) has closed and I like my chances for winning it. More about that below. It may be awhile before we know the outcome because they still haven't finished judging the first round.
 
-The rest of this message will be technical. Read on only if you understand programming and/or want a rare glimpse of stabby source code.
+The rest of this message will be technical. Read on only if you understand programming and/or want a rare glimpse of my source code.
 
 The problem I had to solve is simple to describe. Consider a run of k consecutive primes, such as [11083, 11087, 11093]. Is their sum a perfect power? (A number n is a perfect power if it can be expressed as n = mx where m and x are natural numbers greater than 1.) For example, 2 + 3 + 5 + 7 + 11 + 13 + 17 + 19 + 23 = 100 which is a perfect power because 102 = 100. Got it?
 
 My program took as input two 32-bit integers representing the start and end of a range to consider. It then had to find all possible sub-runs of consecutive primes in the range that sum to a perfect power. For example, on the input [1, 29] it would print (in no particular order):
-
+```
 sum(3:5) = 8 = 2^3
 sum(17:19) = 36 = 6^2
 sum(2:23) = 100 = 10^2
 sum(13:19) = 49 = 7^2
 sum(5:13) = 36 = 6^2
-
-So right away there's an O(n^2) complexity going on. For any full run of n consecutive primes there are (n2 - n)/2 sub-runs contained within. [Note: They refer to this sum(x,y) notation as a "k-pair" where the pair are the bounds (x, y) and k is the number of consecutive primes in the run, including x and y.]
+```
+So right away there's an O(n^2) complexity going on. For any full run of n consecutive primes there are (n^2 - n)/2 sub-runs contained within. [Note: They refer to this sum(x,y) notation as a "k-pair" where the pair are the bounds (x, y) and k is the number of consecutive primes in the run, including x and y.]
 
 I broke the problem down into four tasks:
 1. Generate primes in the range
@@ -75,7 +75,7 @@ Sieve of Eratosthenes is an efficient algorithm for generating the first primes 
 
 Step 2 is more interesting than it sounds. Instead of storing the raw prime numbers in a table and summing them up as needed, I processed the primes into a prefix sum table. To recover the original prime number at index i, use sum[i+1] - sum[i]. That's inconvenient but you get something big in return. The sum of any sequence of primes from index i to j is given by sum[j+1] - sum[i]. Beauty!
 
-From what I gather on the contest forums, many competitors skipped step 3 and headed right into the search. Big mistake! They were trying to use math to solve the problem backwards, "I take the sum and calculate its nth root and see if that's an integer. Then I repeat for all values of n." That's a fool's errand. It's fast to build a table of perfect powers using an integer pow(m, x) function and a priority queue to keep them sorted. Hell, I assigned 39 threads to step 1 and only one thread to step 3 and it still finished first.
+From what I gather on the contest forums, many competitors skipped step 3 and headed right into the search. Big mistake! They were trying to use math to solve the problem backwards, "I take the sum and calculate its nth root and see if that's an integer. Then I repeat for all values of n." That's a fool's errand. It's fast to build a table of perfect powers using an integer `pow(m, x)` function and a priority queue to keep them sorted. Hell, I assigned 39 threads to step 1 and only one thread to step 3 and it still finished first.
 
 Step 4 is where the contest will be won or lost. On a big problem of a hundred million primes, steps 1 through 3 take one second and step 4 takes 15 minutes. Seriously.
 
@@ -84,16 +84,16 @@ I wrote five different search strategies only to throw four of them away when th
 That's about it other than multi-threading issues such as load balancing. There was one astonishing result: frequent barriers caused the program to run faster! The stride strategy has excellent cache coherency as long as all of the threads run together as a pack. If one thread fell behind (perhaps to output results) then I'd see some cache thrashing. So I added a "metronome" to resynchronize the threads. The optimum time between resyncs: 600 milliseconds. I was expecting it to be closer to a minute.
 
 **6/17/2011:**
-Regarding "That's a fool's errand", what's worse is that they were trying to use the Standard C Library's double precision floating point math functions to calculate the integer nth root of an integer [there is no nroot function per se but one can use pow(x, 1.0/n) or exp(ln(x) / n)]. This is the worst of both worlds: slow and imprecise. It's slow because the math functions will calculate it out to the full 64 bit precision even if it's clear from the first few bits that the answer will not be an integer (e.g. 3.5490.... is not converging to an integer). Imprecise because even double precision floats can't represent all integers exactly. If the answer is 5.000000000001 is that an integer? Ceilings and floors don't help. The best way to know for sure is to turn around and double check if pow(x, k) = n.
+Regarding "That's a fool's errand", what's worse is that they were trying to use the Standard C Library's double precision floating point math functions to calculate the integer nth root of an integer [there is no nroot function per se but one can use `pow(x, 1.0/n)` or `exp(ln(x) / n)`]. This is the worst of both worlds: slow and imprecise. It's slow because the math functions will calculate it out to the full 64 bit precision even if it's clear from the first few bits that the answer will not be an integer (e.g. 3.5490.... is not converging to an integer). Imprecise because even double precision floats can't represent all integers exactly. If the answer is 5.000000000001 is that an integer? Ceilings and floors don't help. The best way to know for sure is to turn around and double check if `pow(x, k) = n`.
 
 Also, they were talking about checking the nth root for all values of n from 2 to 64. Practically the only thing Wikipedia has to say on the subject of detecting perfect powers is that you only have to consider exponents that are prime. Maybe these guys knew that and were playing it close to the vest for competitive advantage.
 
-In all honesty, one of the five strategies I implemented and ultimately rejected was a mathematical perfect power detector. It wasn't my first approach but it was definitely the hardest work. I implemented the algorithms outlined in the paper Detecting Perfect Powers in Essentially Linear Time by Daniel J. Bernstein. It calculates nth roots a few bits at a time and aborts when the answer is clearly not going to be an integer. My thought was that it might scale better because it's CPU bound rather than memory bound like my table-based search strategies. No dice. It was by far the slowest of the five strategies (which is no offense to Mr. Bernstein - his paper is geared toward BigInts for which power tables would be impractical).
+In all honesty, one of the five strategies I implemented and ultimately rejected was a mathematical perfect power detector. It wasn't my first approach but it was definitely the hardest work. I implemented the algorithms outlined in the paper *Detecting Perfect Powers in Essentially Linear Time* by Daniel J. Bernstein. It calculates nth roots a few bits at a time and aborts when the answer is clearly not going to be an integer. My thought was that it might scale better because it's CPU bound rather than memory bound like my table-based search strategies. No dice. It was by far the slowest of the five strategies (which is no offense to Mr. Bernstein - his paper is geared toward BigInts for which power tables would be impractical).
 
 **8/3/2011:**
 The results are in for round 2 of my programming contest. I won first place! Not only that, I won by such a wide margin that I've taken the overall lead toward the grand prize. All that stands between me and that trip to San Francisco is round 3, which I expect to win handily.
 
-Round 2 was the math problem about consecutive primes and perfect powers. For a description of the problem and my solution, see this conversation with Phi. A perfect score for round 2 would be 285 points. I received 285 points - a perfect score. Here's the breakdown:
+Round 2 was the math problem about consecutive primes and perfect powers. A perfect score for round 2 would be 285 points. I received 285 points - a perfect score. Here's the breakdown:
 
 * 75 points for submitting an entry
 * 25 points for not cheating by using a precomputed table of primes (it was tempting...)
