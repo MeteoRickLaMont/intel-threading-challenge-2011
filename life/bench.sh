@@ -19,7 +19,8 @@ WEIGHT=${4:--1}
 #     Print statistics (average, stddev, etc.)
 #
 
-export LD_LIBRARY_PATH=/home/lamont/wjakob/tbb/build/
+# XXX Install TBB and point to build location
+# export LD_LIBRARY_PATH=<path/to/wjakob/tbb/build/>
 jmfernandez() {
     (./jmfernandez $1) | awk '
         /Time elapsed/ { time = $3 }
