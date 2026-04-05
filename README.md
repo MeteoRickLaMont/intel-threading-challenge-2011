@@ -21,7 +21,7 @@ This repository is organized into three directories representing each stage of t
 
 Entries were benchmarked on the Intel® Manycore Testing Lab (MTL), a high-performance 40-core development environment. To measure raw parallel efficiency, the systems were configured in 40-thread mode (Hyper-Threading disabled). Competitors had the optional opportunity to develop and validate their code on the MTL throughout the competition.
 
-Submissions were scored primarily on their ability to achieve 100% correctness in the shortest execution time. Additional bonus points were awarded based on specific criteria that varied by round, such as finding not only correct but optimal solutions.
+Submissions were scored on ten test inputs (not disclosed in advance) primarily on their ability to achieve 100% correctness in the shortest execution time. Additional bonus points were awarded based on specific criteria that varied by round, such as finding not only correct but optimal solutions.
 
 ## The Grand Prize
 
