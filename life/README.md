@@ -6,6 +6,10 @@ Maze of Life is a puzzle/game devised by Andrea Gilbert (http://www.clickmazes.c
 
 Write a threaded code to find a solution to an input instance of the Maze of Life. Input to the application will be from a text file listed first on the command line. The file will contain the initial configuration of the grid for the start of the game. Output of the application will be the path of the intelligent cell from the initial grid point to the goal grid point and will be stored in the second file listed on the command line. The path must ensure that the intelligent cell remains alive from start to reaching the goal as the cell interacts with the other alive cells from one generation to the next.
 
+## Input Description
+
+The input to the program will be from a text file named on the command line of the application. The first line will be two integers denoting the dimensions of the grid, number of rows and number of columns. For consistency and shared point of reference, the upper left corner of the grid will be at the (1 1) location. The second line of the file will be the coordinates of the goal grid point. The third line will be the initial coordinates of the intelligent cell. Remaining lines will be the coordinates of the remainder of the "alive" cells in the initial state of the game. Each line of the file will contain 10 integers with at least one space between each. These represent coordinate pairs of five alive nodes. A tag of two zeroes (0 0) denotes the end of the live cell coordinates. The exception for 10 integers per line will last line of the file which may have fewer than 5 coordinates and the tag.
+
 ## Key files in this directory
 
 * [**Miguel Fernandez's original submission**](jmfernandez.cpp) was the fastest overall but only came in third place. More on that later.
