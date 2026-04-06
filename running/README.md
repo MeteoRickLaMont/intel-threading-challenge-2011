@@ -33,7 +33,7 @@ Yet SSE and threading will only go so far when the basic algorithm is "grind it 
 
 Define "block" as a set of 37 cycles, beginning with the DWORD addition and ending after the 36th BYTE addition.
 
-[Figure 1](block.png)
+![Block](block.png)
 
 Define "bucket" as each of the 37 positions within a block. Bucket number 0 represents any state that occurs immediately after a DWORD addition. Bucket number 36 falls at the end of a block, after the 36th BYTE addition and immediately before the DWORD addition that will begin the next block.
 
@@ -64,7 +64,7 @@ Let "back" be the step from this bucket to the end of the block:
 ```
 When a job needs to advance the accumulator "acc" by one block it takes these steps:
 
-[Figure 2](blockstep.png)
+![Block step](blockstep.png)
 ```
     acc += back                 // 8 bit addition
     acc += DWORDadder           // 32 bit addition
@@ -72,7 +72,7 @@ When a job needs to advance the accumulator "acc" by one block it takes these st
 ```
 Suppose a thread knows that there is no solution at its bucket in the next block. It can advance two blocks like this:
 
-[Figure 3](skim2.png)
+![Skimming](skim2.png)
 ```
     acc += back                 // 8 bit addition
     acc += DWORDadder           // 32 bit addition
@@ -151,11 +151,11 @@ inline __m128i skim(int count, __m128i a,
 
 I call this algorithm "barrel lock" because it's analogous to opening a 4 dial lock when you already know the combination.
 
-[Figure 4](barrel.jpg)
+![Barrel lock](barrel.jpg)
 
 Partition the 128 bit accumulator into four logical dials each indicated by a color in this diagram:
 
-[Figure 5](dials.png)
+![Four dials](dials.png)
 
 Each dial consists of 4 non-contiguous bytes. The red dial is made up of the least significant byte of each DWORD, while the yellow dial is the most significant bytes. A dial is not considered solved until all four bytes have their target values.
 
@@ -373,15 +373,15 @@ Now I will go into some detail about the problem statement and my solution. This
 
 The problem is called Running Numbers because it acts like a crazy odometer. Given three 128 bit input values (in hexadecimal):
 
-[Input](input.png)
+![Input](input.png)
 
 Create an accumulator that starts with value Source. On the first cycle (cycle number zero), add DWORD adder to the accumulator. For this addition treat both the accumulator and the adder as four independent 32-bit words. If the result of any addition exceeds the 32-bit capacity it simply "rolls over", discarding the carry:
 
-[DWORD adder](dadder.png)
+![DWORD adder](dadder.png)
 
 For the second cycle (number 1), add BYTE adder to the accumulator. This time the accumulator and adder will be treated as 16 individual bytes, each rolling over without carry:
 
-[BYTE adder](badder.png)
+![BYTE adder](badder.png)
 
 Continue doing BYTE additions for 35 more cycles. On the 37th cycle (cycle number 36), the whole process starts over with a DWORD addition. In other words, do a DWORD addition whenever the cycle number is evenly divisible by 37. Otherwise, do a BYTE addition. Run this simulation until a cycle ends with all bytes equal to zero or all bytes equal Source (their original values). When that happens, print the number of cycles completed and exit.
 
@@ -412,11 +412,11 @@ Meanwhile, the 37 cycle pattern whispered, "You have 40 cores. Use 37 threads to
 
 I named my algorithm barrel lock because it's analogous to opening a 4 dial lock when you already know the combination.
 
-[Barrel Lock](barrel.jpg)
+![Barrel Lock](barrel.jpg)
 
 Partition the 128 bit accumulator into four logical dials as indicated by the four colors in this diagram:
 
-[Four dials](dials.png)
+![Four dials](dials.png)
 
 Each dial consists of 4 non-contiguous bytes. The red dial is made up of the least significant byte of each DWORD while the yellow dial is the set of most significant bytes. A dial is not considered solved until all four bytes reach their target values.
 
