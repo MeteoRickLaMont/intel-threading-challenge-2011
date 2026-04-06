@@ -21,6 +21,15 @@ The program only need to write the number of cycles it took until the Source buf
 * [**Rick LaMont's original submission**](main.cpp) placed first.
 * [**A reference implementation**](classic.cpp) of a reliable O(n) solution that also uses threading and SSE. Rick used this to verify the correctness of his actual submission.
 
+## Notes on scoring
+
+Full scoring was as follows:
+* 100 points for submitting an entry
+* 25 points for posting 5 or more comments in the contest forums
+* 11.11 points on each of nine test cases for having the fastest correct program. Some consolation points were awarded for correct, non-first place entries.
+
+Rick LaMont scored 206.22 points with the fastest correct program on seven of the nine test cases.
+
 ---
 
 ## Rick LaMont's post-mortem of Barrel Lock, posted on Intel's contest forum 2011
@@ -338,7 +347,8 @@ bother to zip it.
 
 ## Historical Commentary
 
-*The following commentary is sourced from my contemporaneous developer's blog in 2011. While some of the language reflects the competitive "heat of the moment" and the excitement of my followers at the time, please view it through a historical lens. I have the utmost respect for the brilliant engineers who competed alongside me. The Intel Threading Challenge was a high-water mark for manycore optimization and I am honored to have been a part of it. - Rick LaMont*
+> The following commentary is sourced from my contemporaneous developer's blog in 2011. While some of the language reflects the competitive "heat of the moment" and the excitement of my followers at the time, please view it through a historical lens. I have the utmost respect for the brilliant engineers who competed alongside me. The Intel Threading Challenge was a high-water mark for manycore optimization and I am honored to have been a part of it.
+> - Rick LaMont
 
 **6/14/11:**
 The third round has started and nobody stands a chance against my awesome program. It's another math problem that I've figured out to a greater degree than the problem designers imagined.

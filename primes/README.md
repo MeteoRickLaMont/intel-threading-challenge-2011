@@ -6,6 +6,12 @@ A pair of consecutive primes would be two prime numbers that have no other prime
 
 Write a threaded code to find the sum of all possible "k-pair" consecutive prime number sets and determine if their sum is a perfect power. For example, given p1, p2, and p3 are consecutive primes, the sum of these primes is N (= p1 + p2 + p3). A number N is a perfect power if N = n^m, with n, m >= 2 (i.e., N is a perfect square, perfect cube, etc.). Input to the application will be from the command line, which will include the range of numbers from which primes will be recruited and the highest exponent (m) the application will need to consider. Output of the application will be the sets of consecutive primes that are added together resulting in a perfect power value.
 
+## Correction
+
+On the contest forum, clarification was sought on whether it was allowable for submissions to include a data file with all the prime numbers precomputed. The answer was no, that's not what the officials had envisioned. A followup question pointed out that many algorithms for calculating primes relied on a small "seed set" of prime numbers such as {2, 3, 5}. Would this be allowed or must submissions start from a blank slate. The judges drew a line somewhere (200 primes?) and posted their decision on the forum.
+
+Unfortunately, not everyone got the memo. One very active competitor named "lazydodo" worked hard on his submission only to later find out that it would likely be disqualified for using precomputed primes. The officials reconsidered and decided to reward submissions that did not make use of extensive prime tables with 25 bonus points.
+
 ## Input description
 
 The input to the program will be from the command line as three integers. The first and second integers will be the start and the end, inclusive, of the range from which prime numbers must be used. The third command line parameter is the maximum power m, which the application must use to compute perfect powers. The input values will be represented with 32-bit unsigned integers. The fourth parameter on the command-line would be the name of the text file to hold the output.
@@ -36,7 +42,7 @@ Rick's submission depends on helper files [primes.cpp](primes.cpp), [powers.cpp]
 
 Full scoring was as follows:
 * 75 points for submitting an entry
-* 25 points for not cheating by using a precomputed table of primes
+* 25 points for not using a precomputed table of primes
 * 25 points for posting 5 or more comments in the contest forums
 * 6 points for each test case where correct results were produced
 * 10 points for fastest correct program on each test case. Non-first place entries scored on a linear scale based on speed relative to first place entry.
@@ -47,7 +53,8 @@ Rick LaMont earned a perfect score of 285, with a wide enough margin to vault fr
 
 ## Historical Commentary
 
-*The following commentary is sourced from my contemporaneous developer's blog in 2011. While some of the language reflects the competitive "heat of the moment" and the excitement of my followers at the time, please view it through a historical lens. I have the utmost respect for the brilliant engineers who competed alongside me. The Intel Threading Challenge was a high-water mark for manycore optimization and I am honored to have been a part of it. - Rick LaMont*
+> The following commentary is sourced from my contemporaneous developer's blog in 2011. While some of the language reflects the competitive "heat of the moment" and the excitement of my followers at the time, please view it through a historical lens. I have the utmost respect for the brilliant engineers who competed alongside me. The Intel Threading Challenge was a high-water mark for manycore optimization and I am honored to have been a part of it.
+> - Rick LaMont
 
 **5/13/2011:**
 The second round is pretty boring and I do expect to win. It's a math problem: sums of consecutive primes, perfect powers, *yawns*. I got an early start and totally figured this thing out. It's getting linear speedup in the multicore lab: 32 threads solve the problem twice as fast as 16 do.
