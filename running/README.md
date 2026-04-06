@@ -46,12 +46,12 @@ Define "block" as a set of 37 cycles, beginning with the DWORD addition and endi
 
 Define "bucket" as each of the 37 positions within a block. Bucket number 0 represents any state that occurs immediately after a DWORD addition. Bucket number 36 falls at the end of a block, after the 36th BYTE addition and immediately before the DWORD addition that will begin the next block.
 
-Consider the sample problem where the solution is 574395734.
+Consider the sample problem where the solution is 574,395,734.
 ```
     574395734 / 37 = 15524209 blocks
     574395734 % 37 = 1 cycle
 ```
-More precisely, a solution was found in bucket 0 after 15524209 blocks. Note that the "off by one" is due to the first cycle being cycle number 0. Bucket 0 represents the state after 1 cycle, 38 cycles, 75 cycles, etc.
+More precisely, a solution was found in bucket 0 after 15,524,209 blocks. Note that the "off by one" is due to the first cycle being cycle number 0. Bucket 0 represents the state after 1 cycle, 38 cycles, 75 cycles, etc.
 
 **THREADING MODEL**
 
@@ -179,11 +179,11 @@ For example consider the test where:
 The solution proceeds as follows:
 ```
                         accumulator                             ncycles
-    initially:          d6b610c0 12e04960 1632f700 94c145c0     0
-    after red phase:    71f37400 087a6000 5adf7400 df42b000     3520
-    after green phase:  cf4f0000 aac80000 cd8f0000 18e40000     344512
-    after blue phase:   f8000000 40000000 f8000000 20000000     434389440
-    after yellow phase: 00000000 00000000 00000000 00000000     15332557248
+    initially:          d6b610c0 12e04960 1632f700 94c145c0                  0
+    after red phase:    71f37400 087a6000 5adf7400 df42b000              3,520
+    after green phase:  cf4f0000 aac80000 cd8f0000 18e40000            344,512
+    after blue phase:   f8000000 40000000 f8000000 20000000        434,389,440
+    after yellow phase: 00000000 00000000 00000000 00000000     15,332,557,248
 ```
 The dials on an actual barrel lock are independent. Once a dial is in place you don't have to move it again. However, the Running Numbers problem more closely resembles an odometer than a barrel lock. The green dial doesn't advance without the red dial also advancing.
 
@@ -285,18 +285,18 @@ Define "probe" as any comparison between the accumulator and a full or partial g
 Probes are more expensive than steps, not becuase they use more instructions but because of the inherent branching. Barrel lock seeks to minimize probes. In the worst case a job would need:
 ```
     red phase:      9 probes
-    green phase:  256
-    blue phase:   256
-    yellow phase: 256
+    green phase:  256 probes
+    blue phase:   256 probes
+    yellow phase: 256 probes
     total:        777 probes
 ```
 Here is the table of worst case steps for a job in terms of the number of SSE instructions (i.e. skimming n blocks takes 2n+1 steps):
 ```
-    red phase:       518 steps
-    green phase:  131328
-    blue phase: 33554688
-    yellow phase:    256
-    total:      33686790 steps
+    red phase:           518 steps
+    green phase:     131,328 steps
+    blue phase:   33,554,688 steps
+    yellow phase:        256 steps
+    total:        33,686,790 steps
 ```
 The blue phase is the bottleneck due to the cost of skimming 64K blocks at a time. Therefore, the barrel lock algorithm is O(n) where:
 ```
@@ -310,30 +310,30 @@ The two jobs that do launch are the one that ultimately finds the solution and j
 
 Here are my benchmarks on the Linux MTL batch node acano02 using the usual test suite:
 ```
-           4774 cycles:          1.039 milliseconds
-           7196 cycles:          1.027
-          21593 cycles:          1.047
-           7179 cycles:          1.026
-           5039 cycles:          1.038
-          11419 cycles:          1.038
-      431787735 cycles:          3.818
-      574395734 cycles:         14.276
-     1241513984 cycles:          1.051
-     1483695460 cycles:          6.456
-     2626626062 cycles:          4.233
-     4076988879 cycles:          9.285
-    15332557248 cycles:         10.994
-    79456894940 cycles:         11.952
+          4,774 cycles:          1.039 milliseconds
+          7,196 cycles:          1.027
+         21,593 cycles:          1.047
+          7,179 cycles:          1.026
+          5,039 cycles:          1.038
+         11,419 cycles:          1.038
+    431,787,735 cycles:          3.818
+    574,395,734 cycles:         14.276
+  1,241,513,984 cycles:          1.051
+  1,483,695,460 cycles:          6.456
+  2,626,626,062 cycles:          4.233
+  4,076,988,879 cycles:          9.285
+ 15,332,557,248 cycles:         10.994
+ 79,456,894,940 cycles:         11.952
 ```
-Three of these tests are noteworthy. The 21593 cycles test has a redPeriod of 128. All the rest have the typical 256 redPeriod. On the last test (lazydodo's repeat example) all 37 repeat jobs make it to the yellow phase and find solutions. That's when it's nice to have 40 cores. Finally, the sample 574395734 cycle test is a near worst-case scenario for barrel lock because it has a heavy blue phase: 237 (out of a possible 256) probes along with the maximum greenPeriod of 64K.
+Three of these tests are noteworthy. The 21,593 cycles test has a redPeriod of 128. All the rest have the typical 256 redPeriod. On the last test (lazydodo's repeat example) all 37 repeat jobs make it to the yellow phase and find solutions. That's when it's nice to have 40 cores. Finally, the sample 574,395,734 cycle test is a near worst-case scenario for barrel lock because it has a heavy blue phase: 237 (out of a possible 256) probes along with the maximum greenPeriod of 64K.
 
 The worst case (max probes, max steps) breakdown for each phase of a job are:
 ```
-    red phase:       1 microseconds
-    green phase:    64
-    blue phase:  14878
-    yellow phase:    1
-    total:       14944 microseconds
+    red phase:        1 microseconds
+    green phase:     64 microseconds
+    blue phase:  14,878 microseconds
+    yellow phase:     1 microseconds
+    total:       14,944 microseconds
 ```
 The bottom line is that this program solves any problem in about 15 milliseconds or less.  I'm pleased with this result but believe there's room for improvement. With sufficient modular arithmetic analysis, it may be possible to optimize the green and blue phases in a fashion similar to that of the yellow phase.
 
@@ -348,7 +348,6 @@ bother to zip it.
 ## Historical Commentary
 
 > The following commentary is sourced from my contemporaneous developer's blog in 2011. While some of the language reflects the competitive "heat of the moment" and the excitement of my followers at the time, please view it through a historical lens. I have the utmost respect for the brilliant engineers who competed alongside me. The Intel Threading Challenge was a high-water mark for manycore optimization and I am honored to have been a part of it.
-> - Rick LaMont
 
 **6/14/11:**
 The third round has started and nobody stands a chance against my awesome program. It's another math problem that I've figured out to a greater degree than the problem designers imagined.
@@ -361,25 +360,25 @@ Round 3 was definitely my strongest. I expect my program to dominate the competi
 
 | Problem size (in cycles) | Competitor A (in msecs) | Competitor B (in msecs) | Competitor C (in msecs) | Rick LaMont (in msecs) |
 | ---: | ---: | ---: | ---: | ---: |
-| 4774 | N/A | 1.751 | 2.977 | 1.039 |
-| 7196 | 2.444 | N/A | 2.820 | 1.027 |
-| 7179 | 2.205 | N/A | 3.132 | 1.026 |
-| 5039 | 2.584 | N/A | 2.918 | 1.038 |
-| 11419 | 1.688 | N/A | 2.798 | 1.038 |
-| 21593 | 1.695 | N/A | 2.933 | 1.047 |
-| 431787735 | 43.513 | 50.529 | 23.632 | 3.818 |
-| 574395734 | 33.885 | 59.513 | 30.731 | 14.276 |
-| 1241513984 | 60.255 | N/A | N/A | 1.051 |
-| 1483695460 | 66.790 | 152.44 | 77.065 | 6.456 |
-| 2626626062 | 102.318 | 268.011 | 135.417 | 4.233 |
-| 4076988879 | 144.773 | 411.186 | 190.577 | 9.285 |
-| 15332557248 | 434.253 | 1,517.950 | 592.374 | 10.994 |
-| 79456894940 | 1,955.989 | 7,836.130 | 890.413 | 11.952 |
-| 158913789952 | 3,892.730 | N/A | 1,623.424 | N/A |
+| 4,774 | N/A | 1.751 | 2.977 | 1.039 |
+| 7,196 | 2.444 | N/A | 2.820 | 1.027 |
+| 7,179 | 2.205 | N/A | 3.132 | 1.026 |
+| 5,039 | 2.584 | N/A | 2.918 | 1.038 |
+| 11,419 | 1.688 | N/A | 2.798 | 1.038 |
+| 21,593 | 1.695 | N/A | 2.933 | 1.047 |
+| 431,787,735 | 43.513 | 50.529 | 23.632 | 3.818 |
+| 574,395,734 | 33.885 | 59.513 | 30.731 | 14.276 |
+| 1,241,513,984 | 60.255 | N/A | N/A | 1.051 |
+| 1,483,695,460 | 66.790 | 152.44 | 77.065 | 6.456 |
+| 2,626,626,062 | 102.318 | 268.011 | 135.417 | 4.233 |
+| 4,076,988,879 | 144.773 | 411.186 | 190.577 | 9.285 |
+| 15,332,557,248 | 434.253 | 1,517.950 | 592.374 | 10.994 |
+| 79,456,894,940 | 1,955.989 | 7,836.130 | 890.413 | 11.952 |
+| 158,913,789,952 | 3,892.730 | N/A | 1,623.424 | N/A |
 
 *(Competitor B claims to have doubled this speed prior to submitting his entry.)*
 
-Note how the other programs get progressively slower as the problem size grows. That's called linear or O(n) running time. My program solves any problem in 15 milliseconds or less. The 574395734 test is a near worst-case scenario for it.
+Note how the other programs get progressively slower as the problem size grows. That's called linear or O(n) running time. My program solves any problem in 15 milliseconds or less. The 574,395,734 test is a near worst-case scenario for it.
 
 Now I will go into some detail about the problem statement and my solution. This will get technical but at least there are pretty pictures...
 
@@ -446,10 +445,10 @@ The solution proceeds as follows:
 | After phase | Accumulator | Number of cycles |
 | :--- | :---: | ---: |
 | initial | d6b610c0 12e04960 1632f700 94c145c0 | 0 |
-| red | 71f37400 087a6000 5adf7400 df42b000 | 3520 |
-| green | cf4f0000 aac80000 cd8f0000 18e40000 | 344512 |
-| blue | f8000000 40000000 f8000000 20000000 | 434389440 |
-| yellow | 00000000 00000000 00000000 00000000 | 15332557248 |
+| red | 71f37400 087a6000 5adf7400 df42b000 | 3,520 |
+| green | cf4f0000 aac80000 cd8f0000 18e40000 | 344,512 |
+| blue | f8000000 40000000 f8000000 20000000 | 434,389,440 |
+| yellow | 00000000 00000000 00000000 00000000 | 15,332,557,248 |
 
 That should give you a flavor for how I solved this problem.
 

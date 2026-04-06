@@ -103,7 +103,6 @@ This was the solution that I submitted, using the greedy payoff function as its 
 ## Historical Commentary
 
 > The following commentary is sourced from my contemporaneous developer's blog in 2011. While some of the language reflects the competitive "heat of the moment" and the excitement of my followers at the time, please view it through a historical lens. I have the utmost respect for the brilliant engineers who competed alongside me. The Intel Threading Challenge was a high-water mark for manycore optimization and I am honored to have been a part of it.
-> - Rick LaMont
 
 **5/3/2011:**
 The challenge for the first round is to write a multithreaded program to solve a kind of puzzle. Programs will be judged on a 40 core computer next week. The contestant whose program finds any correct solution in the shortest execution time wins 80 points. Everyone, including the winner, has an opportunity to pick up an additional 20 points if their program finds an optimal (fewest steps) solution. Points from each round accumulate toward the grand prize.

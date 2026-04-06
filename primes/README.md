@@ -54,7 +54,6 @@ Rick LaMont earned a perfect score of 285, with a wide enough margin to vault fr
 ## Historical Commentary
 
 > The following commentary is sourced from my contemporaneous developer's blog in 2011. While some of the language reflects the competitive "heat of the moment" and the excitement of my followers at the time, please view it through a historical lens. I have the utmost respect for the brilliant engineers who competed alongside me. The Intel Threading Challenge was a high-water mark for manycore optimization and I am honored to have been a part of it.
-> - Rick LaMont
 
 **5/13/2011:**
 The second round is pretty boring and I do expect to win. It's a math problem: sums of consecutive primes, perfect powers, *yawns*. I got an early start and totally figured this thing out. It's getting linear speedup in the multicore lab: 32 threads solve the problem twice as fast as 16 do.
@@ -74,7 +73,7 @@ sum(2:23) = 100 = 10^2
 sum(13:19) = 49 = 7^2
 sum(5:13) = 36 = 6^2
 ```
-So right away there's an O(n^2) complexity going on. For any full run of n consecutive primes there are (n^2 - n)/2 sub-runs contained within. [Note: They refer to this sum(x,y) notation as a "k-pair" where the pair are the bounds (x, y) and k is the number of consecutive primes in the run, including x and y.]
+So right away there's an O(n<sup>2</sup>) complexity going on. For any full run of n consecutive primes there are (n<sup>2</sup> - n)/2 sub-runs contained within. [Note: They refer to this sum(x,y) notation as a "k-pair" where the pair are the bounds (x, y) and k is the number of consecutive primes in the run, including x and y.]
 
 I broke the problem down into four tasks:
 1. Generate primes in the range
