@@ -358,7 +358,7 @@ My programming contest is over for now. Round 3 of 3 closed this week. Now we ha
 
 Round 3 was definitely my strongest. I expect my program to dominate the competition on any test the judges throw at it. Some of my competitors published their execution times on a set of benchmark tests we were all using. Here's how my program stacks up against theirs (all times in milliseconds, lower numbers are better):
 
-| Problem size (in cycles) | Competitor A (in msecs) | Competitor B (in msecs) | Competitor C (in msecs) | Rick LaMont (in msecs) |
+| Problem size (in cycles) | Competitor A (in msecs) | Competitor B<sup>[1]</sup> (in msecs) | Competitor C (in msecs) | Rick LaMont (in msecs) |
 | ---: | ---: | ---: | ---: | ---: |
 | 4,774 | N/A | 1.751 | 2.977 | 1.039 |
 | 7,196 | 2.444 | N/A | 2.820 | 1.027 |
@@ -376,7 +376,7 @@ Round 3 was definitely my strongest. I expect my program to dominate the competi
 | 79,456,894,940 | 1,955.989 | 7,836.130 | 890.413 | 11.952 |
 | 158,913,789,952 | 3,892.730 | N/A | 1,623.424 | N/A |
 
-*(Competitor B claims to have doubled this speed prior to submitting his entry.)*
+*[1] Competitor B claims to have doubled this speed prior to submitting his entry.*
 
 Note how the other programs get progressively slower as the problem size grows. That's called linear or O(n) running time. My program solves any problem in 15 milliseconds or less. The 574,395,734 test is a near worst-case scenario for it.
 
@@ -461,7 +461,7 @@ Here's the breakdown of my score:
 * 25 points for posting 5 or more comments in the contest forums
 * 81.22 points for having the fastest correct program on 7 of the 9 test cases
 
-The first two test cases must have been really small. My program solved each of them in 4 milliseconds and only came in 6th or 7th place on those tests. Some other programs are said to have solved them in 0.000 milliseconds (less than 500 microseconds?) Once we got into the real tests, however, my program took over. On one large test my program finished in 24 milliseconds, almost 25 times faster than the second place finisher at 582 milliseconds.
+The first two test cases must have been really small. My program solved each of them in 4 milliseconds and only came in 6th or 7th place on those tests. Some other programs are said to have solved them in 0.000 milliseconds (less than 500 nanoseconds?) Once we got into the real tests, however, my program took over. On one large test my program finished in 24 milliseconds, almost 25 times faster than the second place finisher at 582 milliseconds.
 
 For the grand prize scoring, they normalized the three rounds to be worth 100 points each. A perfect score would have been 300 for winning all three rounds. Here's the final tally:
 
