@@ -54,6 +54,8 @@ The result of the above observations was greedy.cpp, a truly fast scalable multi
 
 For optimal paths a completely different algorithm is called for. In beam.cpp we see the application the [beam search](https://en.wikipedia.org/wiki/Beam_search) algorithm. With the proper tuning, it can find the optimal solution to all ten cases in a reasonable amount of time. If it could travel back in time, this program would win Round 1.
 
+---
+
 ## Rick LaMont's post-mortem of NBlock, posted on Intel's contest forum 2011
 
 I almost hate to talk about Maze of Life because it was such an interesting problem and my solution had potential but regrettably did not scale to multiple threads. Part of my difficulty stemmed from getting a late start on the contest and only having 9 days to complete Maze of Life. Working the full 21 days really helps on any problem.
@@ -98,28 +100,30 @@ The basic idea is that the game grid is divided into equal-sized rectangular zon
 
 This was the solution that I submitted, using the greedy payoff function as its heuristic. It still didn't speed up with threads but this is the Threading Challenge. It wouldn't be in the spirit of the competition to submit a single-threaded solution.
 
-## Rick LaMont's contemporaneous developer's blog
+## Historical Commentary
 
-**5/3/2011**
-The challenge for the first round is to write a multithreaded program to solve this kind of puzzle. Programs will be judged on a 40 core computer next week. The contestant whose program finds any correct solution in the shortest execution time wins 80 points. Everyone, including the winner, has an opportunity to pick up an additional 20 points if their program finds an optimal (fewest steps) solution. Points from each round accumulate toward the grand prize.
+*The following commentary is sourced from my contemporaneous developer's blog in 2011. While some of the language reflects the competitive "heat of the moment" and the excitement of my followers at the time, please view it through a historical lens. I have the utmost respect for the brilliant engineers who competed alongside me. The Intel Threading Challenge was a high-water mark for manycore optimization and I am honored to have been a part of it. - Rick LaMont*
+
+**5/3/2011:**
+The challenge for the first round is to write a multithreaded program to solve a kind of puzzle. Programs will be judged on a 40 core computer next week. The contestant whose program finds any correct solution in the shortest execution time wins 80 points. Everyone, including the winner, has an opportunity to pick up an additional 20 points if their program finds an optimal (fewest steps) solution. Points from each round accumulate toward the grand prize.
 
 So here's the thing: My program can run in a mode where it usually finds an optimal solution (for a sure 20 points) or in another mode where it finds a sub-optimal solution much faster (a chance at 80 points). How should I configure it for the judging? Hint: Screw the 20 points, I'm going for the win!
 
 I'll let you know how it goes next week. This is my first experience in competitive programming.
 
-**5/13/2011**
+**5/13/2011:**
 The first round (Maze of Life) was an interesting problem but I don't expect to win. The judging will take a couple of weeks. Maybe I can pick up second or third place. My single-threaded solution was really fast but every attempt to multi-thread it only made it go slower. I went ahead and submitted a multi-threaded version. This contest is all about threading so it wouldn't be in the spirit of competition to turn in single-threaded code. Besides, it wouldn't have stood a chance against a well designed threaded solution.
 
-**6/27/2011**
+**6/27/2011:**
 The results from the first round of my programming contest are in. I did not expect to do well on this round because my program scaled poorly with multiple threads (it actually got slower with more threads according to my tests). There were bonus points available for finding optimal solutions, regardless of speed, but my program didn't even attempt to find optimal paths.
 
 I did much better than expected thanks in part to a generous scoring system. Out of 28 contestants I placed 7th with 142.75 points. The winner only got 169.37 points so I'm well within striking distance for the grand prize over the final two rounds. Here's the breakdown of my score:
 
-- 50 points for submitting an entry (door prize!)
-- 50 points because it compiled, ran, and solved the sample problem
-- 25 points for posting 5 or more comments in the contest forums (I like to talk)
-- 12.75 points for having the 4th fastest program overall (mine came in second place on three of the hard problems)
-- 5 points for finding the optimal path on one of the problems (even a blind squirrel finds a nut once in a while)
+* 50 points for submitting an entry (door prize!)
+* 50 points because it compiled, ran, and solved the sample problem
+* 25 points for posting 5 or more comments in the contest forums (I like to talk)
+* 12.75 points for having the 4th fastest program overall (mine came in second place on three of the hard problems)
+* 5 points for finding the optimal path on one of the problems (even a blind squirrel finds a nut once in a while)
 
 The biggest surprise in the way it was scored is that finding the optimal solution was worth just as much as having the fastest program. If I would have known that in advance, I would have submitted a slower version of my program that always found the optimal path and earned a cool 175 points. I had actually written such a version but decided not to submit it because my understanding was that speed would be weighted more heavily in the scoring.
 

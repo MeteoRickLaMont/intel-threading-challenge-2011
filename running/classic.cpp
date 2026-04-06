@@ -1,5 +1,5 @@
 //
-// Intel Threading Challenge 2011 submission
+// Intel Threading Challenge 2011 (not part of submission)
 // P1: A3 - Running Numbers
 // Rick LaMont <lamont@dotcsw.com>
 // Compile with: make
