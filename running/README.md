@@ -185,7 +185,7 @@ The basic concept to make this odometer act like a barrel lock is to figure out 
     bluePeriod   = 2^24
     yellowPeriod = 2^32
 ```
-Suppose the red dial is already in its target position of all bytes zero. The green phase of the algorithm can now safely advance 256 blocks at a time using skim(256) because that is the next time that the red dial will be in its target position. All intervening blocks are non-solutions because the red dial will be out of position. This is how the green phase works:
+Suppose the red dial is already in its target position of all bytes zero. The green phase of the algorithm can now safely advance 256 blocks at a time using `skim(256)` because that is the next time that the red dial will be in its target position. All intervening blocks are non-solutions because the red dial will be out of position. This is how the green phase works:
 ```
     delta = redPeriod * 37              // cycles per skim
     n = greenPeriod / redPeriod         // up to 256 iterations this phase
@@ -196,7 +196,7 @@ Suppose the red dial is already in its target position of all bytes zero. The gr
         ncycles += delta
     report no solution found for this job
 ```
-The blue phase nearly identical except it skims bigger chunks, up to 65536 blocks at a time:
+The blue phase nearly identical except it skims bigger chunks, up to 65,536 blocks at a time:
 ```
     delta = greenPeriod * 37
     n = bluePeriod / greenPeriod
@@ -207,9 +207,9 @@ The blue phase nearly identical except it skims bigger chunks, up to 65536 block
         ncycles += delta
     report no solution found for this job
 ```
-To put things in perspective, note that some of the other post-mortems describe checks that allow the next 36 cycles to be skipped. The skim within the blue phase is skipping up to 2424832 cycles (65536 * 37) without checking for a solution.
+To put things in perspective, note that some of the other post-mortems describe checks that allow the next 36 cycles to be skipped. The skim within the blue phase is skipping up to 2,424,832 cycles (65,536 * 37) without checking for a solution.
 
-Things get interesting in the yellow (final) phase. It could just call skim(bluePeriod) like the other phases did but that's no longer necessary.  The red, green and blue dials are already in place. The only dial still turning is the yellow one and it doesn't matter how many carries it generates into the bit bucket. What matters is how far the yellow dial turns for each bluePeriod. This is a constant that I calculate during initialization while figuring out the periods (hint: it's often equal to the least significant byte of each DWORD in DWORDadder.)
+Things get interesting in the yellow (final) phase. It could just call `skim(bluePeriod)` like the other phases did but that's no longer necessary.  The red, green and blue dials are already in place. The only dial still turning is the yellow one and it doesn't matter how many carries it generates into the bit bucket. What matters is how far the yellow dial turns for each bluePeriod. This is a constant that I calculate during initialization while figuring out the periods (hint: it's often equal to the least significant byte of each DWORD in DWORDadder.)
 
 Armed with this magic blueCarry constant, the yellow phase is simply:
 ```
@@ -257,7 +257,7 @@ The carry from red to green is then given by:
 ```
 Where SOURCE is the initial state given on the command-line.
 
-Turn around and count the zero bits in each DWORD of redCarry, just like before. Let zcarry = the minimum of these four values. Now we can calculate the other periods and blueCarry as:
+Turn around and count the zero bits in each DWORD of redCarry, just like before. Let zcarry equal the minimum of these four values. Now we can calculate the other periods and blueCarry as:
 ```
     greenPeriod  = 2 ^ (16 - zcarry);
     bluePeriod   = 2 ^ (24 - zcarry);
@@ -295,7 +295,7 @@ The blue phase is the bottleneck due to the cost of skimming 64K blocks at a tim
 ```
 In a typical test with an "all bytes zero" solution, only two jobs will make it beyond the red phase. The other 72 jobs fail to launch, freeing up threads to work on other jobs.
 
-The two jobs that do launch are the one that ultimately finds the solution and job #73. You see, job 73 is the one that finds the inevitable repeat after 37 * yellowPeriod cycles. Unfortunately, it needs to take the maximum number of probes (776) to find it. My program includes includes a special early exit for job 73 if it appears to be bound for the maximum cycles.
+The two jobs that do launch are the one that ultimately finds the solution and job #73. You see, job 73 is the one that finds the inevitable repeat after 37 * yellowPeriod cycles. Unfortunately, it needs to take the maximum number of probes (776) to find it. My program includes a special early exit for job 73 if it appears to be bound for the maximum cycles.
 
 **PERFORMANCE**
 
@@ -349,7 +349,7 @@ My programming contest is over for now. Round 3 of 3 closed this week. Now we ha
 
 Round 3 was definitely my strongest. I expect my program to dominate the competition on any test the judges throw at it. Some of my competitors published their execution times on a set of benchmark tests we were all using. Here's how my program stacks up against theirs (all times in milliseconds, lower numbers are better):
 
-| Problem size (in cycles) | Competitor A (in msecs) | Competitor B* (in msecs) | Competitor C (in msecs) | Rick LaMont (in msecs) |
+| Problem size (in cycles) | Competitor A (in msecs) | Competitor B (in msecs) | Competitor C (in msecs) | Rick LaMont (in msecs) |
 | ---: | ---: | ---: | ---: | ---: |
 | 4774 | N/A | 1.751 | 2.977 | 1.039 |
 | 7196 | 2.444 | N/A | 2.820 | 1.027 |
@@ -366,7 +366,9 @@ Round 3 was definitely my strongest. I expect my program to dominate the competi
 | 15332557248 | 434.253 | 1,517.950 | 592.374 | 10.994 |
 | 79456894940 | 1,955.989 | 7,836.130 | 890.413 | 11.952 |
 | 158913789952 | 3,892.730 | N/A | 1,623.424 | N/A |
-(* Competitor B claims to have doubled this speed prior to submitting his entry.)
+
+*(Competitor B claims to have doubled this speed prior to submitting his entry.)*
+
 Note how the other programs get progressively slower as the problem size grows. That's called linear or O(n) running time. My program solves any problem in 15 milliseconds or less. The 574395734 test is a near worst-case scenario for it.
 
 Now I will go into some detail about the problem statement and my solution. This will get technical but at least there are pretty pictures...
@@ -401,13 +403,14 @@ Here's pseudocode for the simulation:
 So there's my winning solution. I think it's elegant in its simplicity. Just kidding!
 
 When I read the problem description, it screamed "Streaming SIMD Extentions" (SSE):
+```
 Q. 128 bit integer registers?
 A. SSE2
 Q. Add as four DWORDS?
 A. PADDD (_mm_add_epi32 intrinsic)
 Q. Add as sixteen BYTES?
 A. PADDB (_mm_add_epi8 intrinsic)
-
+```
 Meanwhile, the 37 cycle pattern whispered, "You have 40 cores. Use 37 threads to decompose it." Yet SSE and threading will only go so far when your basic algorithm is "grind it out". In order to go really fast one needs to optimize the algorithm.
 
 I named my algorithm barrel lock because it's analogous to opening a 4 dial lock when you already know the combination.
@@ -430,13 +433,13 @@ DWORD adder = 39499f0b48e0f3ec3cca214b7a1e0474
 ```
 The solution proceeds as follows:
 
-Table with 6 rows and 3 columns:
 | After phase | Accumulator | Number of cycles |
-| initial | d6b610c0 | 12e04960 | 1632f700 | 94c145c0 | 0 |
+| :--- | :---: | ---: |
+| initial | d6b610c0 12e04960 1632f700 94c145c0 | 0 |
 | red | 71f37400 087a6000 5adf7400 df42b000 | 3520 |
-| green | cf4f0000 | aac80000 | cd8f0000 | 18e40000 | 344512 |
-| blue | f8000000 | 40000000 | f8000000 | 20000000 | 434389440 |
-| yellow | 00000000 | 00000000 | 00000000 | 00000000 | 15332557248 |
+| green | cf4f0000 aac80000 cd8f0000 18e40000 | 344512 |
+| blue | f8000000 40000000 f8000000 20000000 | 434389440 |
+| yellow | 00000000 00000000 00000000 00000000 | 15332557248 |
 
 That should give you a flavor for how I solved this problem.
 
