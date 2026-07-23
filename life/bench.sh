@@ -19,8 +19,9 @@ WEIGHT=${4:--1}
 #     Print statistics (average, stddev, etc.)
 #
 
-# XXX Install TBB and point to build location
-# export LD_LIBRARY_PATH=<path/to/wjakob/tbb/build/>
+# TBB is built from third_party/ by the Makefile (see scripts/build-tbb.sh),
+# which links greedy/beam/jmfernandez with an rpath baked in at build time —
+# no LD_LIBRARY_PATH needed here.
 jmfernandez() {
     (./jmfernandez $1) | awk '
         /Time elapsed/ { time = $3 }

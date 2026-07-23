@@ -1,0 +1,20 @@
+--- tbb40_20111130oss.orig/build/linux.gcc.inc	2026-07-22 16:16:32.760073545 -1000
++++ tbb40_20111130oss/build/linux.gcc.inc	2026-07-22 16:16:32.784073947 -1000
+@@ -57,6 +57,17 @@
+         CPLUS_FLAGS = -DTBB_USE_DEBUG $(ITT_NOTIFY) -g -O0 -DUSE_PTHREAD
+ endif
+ 
++# --- retro-build compatibility patch (see third_party/README.md) ------
++# This 2011-vintage TBB predates C++17's removal of dynamic exception
++# specifications (used in tbbmalloc/proxy.cpp's operator new overloads).
++# A modern GCC whose default dialect is gnu++17 turns those into a hard
++# error instead of the deprecation warning they were in 2011. Force the
++# dialect the original code actually assumed so the *source* stays
++# byte-for-byte the 2011 release; only the build's own compiler
++# invocation is adjusted.
++CPLUS_FLAGS += -std=gnu++98
++# ------------------------------------------------------------------------
++
+ ifneq (0,$(cpp0x))
+     CXX_ONLY_FLAGS = -std=c++0x
+ endif
