@@ -231,7 +231,7 @@ usage:
                     else {
                         // Otherwise, add legal moves to current beam
                         TIMER_START(gThreads[0].stats.tPush);
-                        gCurrBeam.emplace_back(next, c, dist);
+                        gCurrBeam.push_back(Move(next, c, dist));
                         TIMER_STOP(gThreads[0].stats.tPush);
                     }
                 }

@@ -187,7 +187,7 @@ static void *threadsearch(void *d)
                 else {
                     // Otherwise, add legal moves to priority queue
                     TIMER_START(stats->tPush);
-                    gOpenSet->emplace(next, c, next->length() + weight * dist);
+                    gOpenSet->push(Move(next, c, next->length() + weight * dist));
                     TIMER_STOP(stats->tPush);
                 }
             }
