@@ -22,6 +22,18 @@ extern Stopwatch tLoad;
 #endif
 
 //
+// Trie node used to record move history. Each Position points to the tail
+// of a chain that walks backward to the root. Copying a Position only copies
+// one pointer; appending a move allocates one node. Reconstructing the move
+// string (for output or debug printing) is done by walking parent pointers.
+//
+struct MoveNode {
+    MoveNode *parent;
+    uint32_t length;
+    char dir;
+};
+
+//
 // Internal representation of Game of Life grid. Store bitmaps for every
 // cell, living or dead, that's in bounds. Representation is LSB first,
 // the leftmost cell is 1. To shift right on-screen shift the bitmap left.
@@ -67,17 +79,18 @@ public:
     constexpr static tBmp XBMPMASK = BMPSIZE - 1;
     constexpr static tBmp XCELLMASK = ~XBMPMASK;
 
-    Position() {}
+    Position() : fMoveTail(nullptr) {}
     Position(const Position &rhs) :
         fCells(rhs.fCells),
         fIntelligentX(rhs.fIntelligentX),
         fIntelligentY(rhs.fIntelligentY),
-        fMoves(rhs.fMoves)
+        fMoveTail(rhs.fMoveTail)
     {}
     Position(tPos yintel, tPos xintel, std::vector<tBmp> &&cells) :
         fIntelligentY(yintel - 1),
         fIntelligentX(xintel - 1),
-        fCells(cells)
+        fCells(cells),
+        fMoveTail(nullptr)
     {}
     ~Position() {}
 
@@ -106,8 +119,7 @@ public:
 
     Position *nextgen(BoardStats &t, const char dir);
     std::string legalDirs(BoardStats &t) const;
-    const std::string &getMoves() const { return fMoves; }
-    uint32_t length() const { return fMoves.length(); }
+    uint32_t length() const { return fMoveTail ? fMoveTail->length : 0; }
     uint32_t distance(const char dir) const;
     inline friend bool operator==(const Position &lhs, const Position &rhs) {
         return lhs.fCells == rhs.fCells;
@@ -122,7 +134,7 @@ private:
     //
     static std::pair<int, int> fDelta[];// Map direction to delta x and delta y
     tPos fIntelligentX, fIntelligentY;  // Current position of smart cell
-    std::string fMoves;                 // How it arrived here
+    MoveNode *fMoveTail;                // Tail of move-history trie chain
 
     //
     // These parameters are common to all positions.
