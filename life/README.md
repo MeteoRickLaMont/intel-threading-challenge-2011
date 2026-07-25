@@ -38,7 +38,7 @@ Miguel's approach was to adapt the [A* search algorithm](https://en.wikipedia.or
 Rick LaMont's solution was based on the lesser known paper [Parallel Best-N Block-First (PBNF) by Ethan Burns et al. (2009)](https://www.cs.unh.edu/~sna4/papers/pbnf-socs-09.pdf). The basic concept is a "zone defense" where each thread works on a different part of the board to minimize contention and locks. Starting 12 days late on a 21 day project, Rick never got it to the point where adding more threads made it go faster.
 
 With the benefit of hindsight of the ten test cases and how it would be scored, Rick set out to write a new solution that would build upon the best elements of his and Miguel's submissions. Here are the main improvements he made:
-* Miguel had the right idea with the A* algorithm but drop the closed set. With a constantly changing graph, the odds of repeating a previous board position are too low to merit consideration.
+* Miguel had the right idea with the A* algorithm, but the implementation was refined to omit the closed set. With a constantly changing graph, the odds of repeating a previous board position are too low to merit consideration.
 * Rick had the right game board data structure except it was designed for large, sparse boards. Change it to fixed height and width. Do not skip over empty vertical or horizontal areas.
 * Loading the input data file is a bottleneck. Use a custom algorithm to parse positive integers quickly.
 * Exit immediately when solution is found. Don't wait for threads to join.
