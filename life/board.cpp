@@ -1,5 +1,22 @@
+#include <cstdlib>              // For malloc()
 #include <cstring>              // For strlen()
 #include "board.h"
+
+//
+// Move-history trie node allocator. Nodes are shared across many Position
+// objects (one child per move tried from a parent), so nodes are never
+// freed during the search — reference counting would require synchronization
+// on every Position copy. tbbmalloc_proxy is linked in so malloc is already
+// routed through TBB's scalable allocator.
+//
+static MoveNode *allocMoveNode(MoveNode *parent, char dir)
+{
+    MoveNode *n = (MoveNode *)malloc(sizeof(MoveNode));
+    n->parent = parent;
+    n->length = parent ? parent->length + 1 : 1;
+    n->dir = dir;
+    return n;
+}
 
 #ifdef STATS
 Stopwatch tLoad("Load");
@@ -45,9 +62,20 @@ std::pair<int, int> Position::fDelta[] = {
 // 
 void Position::output(BoardStats &t, FILE *fp, const char dir)
 {
+    //
+    // Walk the move-history chain back to the root, writing characters
+    // into a buffer from the end toward the beginning so the final string
+    // reads root -> leaf.
+    //
+    uint32_t n = length() + (dir >= '0' ? 1 : 0);
+    std::string buf;
+    buf.resize(n);
+    uint32_t i = n;
     if (dir >= '0')
-        fMoves.push_back(dir);
-    output(t, fp, fMoves.length(), fMoves.c_str());
+        buf[--i] = dir;
+    for (const MoveNode *node = fMoveTail; node; node = node->parent)
+        buf[--i] = node->dir;
+    output(t, fp, n, buf.data());
 }
 
 // "optimal" program calls this function directly
@@ -72,6 +100,12 @@ void Position::print()
 {
     tPos x, y;
 
+    uint32_t mlen = length();
+    std::string moves;
+    moves.resize(mlen);
+    uint32_t mi = mlen;
+    for (const MoveNode *node = fMoveTail; node; node = node->parent)
+        moves[--mi] = node->dir;
     printf("%d x %d board. Intelligent cell (%d, %d). Goal (%d, %d). Moves %s\n",
         gMaxX + 1,
         gMaxY + 1,
@@ -79,7 +113,7 @@ void Position::print()
         fIntelligentY,
         gGoalX,
         gGoalY,
-        fMoves.c_str());
+        moves.c_str());
     tBmp *p;
     for (y = 0, p = &fCells[0]; y < gBoardHeight; ++y) {
         for (x = 0; x <= gMaxX; x += BMPSIZE, ++p)
@@ -131,9 +165,16 @@ uint32_t Position::distance(const char dir) const
 Position *Position::nextgen(BoardStats &t, const char dir)
 {
     TIMER_START(t.tNextGen);
-    Position *ret = new Position(*this);
-
-    ret->fMoves.push_back(dir);
+    //
+    // Allocate the successor with an uninitialized fCells buffer of the
+    // right size. The neighbor-count sweep below overwrites every word,
+    // so copying the parent's bitmap would be pure waste.
+    //
+    Position *ret = new Position;
+    ret->fCells.resize(fCells.size());
+    ret->fIntelligentX = fIntelligentX;
+    ret->fIntelligentY = fIntelligentY;
+    ret->fMoveTail = allocMoveNode(fMoveTail, dir);
 
     tPos yold = fIntelligentY;
     tPos xcellold = fIntelligentX & XCELLMASK;
@@ -328,19 +369,27 @@ std::string Position::legalDirs(BoardStats &t) const
     tBmp rear0, rear1;
     prevmid = currmid = nextmid = rear0 = rear1 = 0;
 
-    prev = (ynclamp - 1 < 0) ? 0 : &fCells[(ynclamp - 1) * gBoardWidth];
-    curr = (ynclamp < 0) ? 0 : &fCells[ynclamp * gBoardWidth];
-    next = &fCells[(ynclamp + 1) * gBoardWidth];
     for (ycurr = ynclamp; ycurr <= ysclamp; ++ycurr) {
-        if (ycurr == 1)
-            prev = &fCells[0];
-        if (ycurr == gMaxY)
-            next = 0;
+        //
+        // Reset row pointers each iteration because the inner loop may
+        // break before consuming the rest of the row.
+        //
+        prev = (ycurr - 1 < 0) ? 0 : &fCells[(ycurr - 1) * gBoardWidth];
+        curr = &fCells[ycurr * gBoardWidth];
+        next = (ycurr == gMaxY) ? 0 : &fCells[(ycurr + 1) * gBoardWidth];
+
+        prevmid = currmid = nextmid = rear0 = rear1 = 0;
 
         //
-        // Secondary loop scans x from left to right
+        // Secondary loop scans x from left to right. A legal move can
+        // only land on one of the three bitmap columns {xwdiv, xidiv,
+        // xediv}, so once xmid has passed xediv the remaining iterations
+        // can only update neighbor-count state that no output step will
+        // ever consume. Skip the rest of the row in that case.
         //
         for (tPos xmid = -BMPSIZE; xmid <= gMaxX; xmid += BMPSIZE) {
+            if (xmid > xediv)
+                break;
             //
             // Set bitmaps prevfore, currfore and nextfore.
             // They are aligned vertically from top to bottom.

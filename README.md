@@ -25,4 +25,4 @@ Submissions were scored on ten test inputs (not disclosed in advance) primarily 
 
 ## The Grand Prize
 
-The Grand Prize for the 2011 Challenge was an all expenses paid trip to the Intel® Developer Forum (IDF) and Honors Dinner in San Francisco, held September 13–15, 2011.
+The Grand Prize for the 2011 Challenge was an all-expenses-paid trip to the Intel® Developer Forum (IDF) and Honors Dinner in San Francisco, held September 13–15, 2011.
