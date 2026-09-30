@@ -100,7 +100,12 @@ public:
         gMaxX = xdim - 1;
         gBoardWidth = gMaxX / BMPSIZE + 1;
         gRightx = gMaxX & XCELLMASK;
-        gRightmask = ~((tBmp)0) >> (BMPSIZE - (xdim & XBMPMASK));
+        //
+        // When xdim is a multiple of BMPSIZE the rightmost bitmap is full.
+        // Guard that case: shifting by BMPSIZE is undefined behavior.
+        //
+        gRightmask = (xdim & XBMPMASK) == 0 ? ~((tBmp)0) :
+            ~((tBmp)0) >> (BMPSIZE - (xdim & XBMPMASK));
     }
 
     static void setGoal(tPos ygoal, tPos xgoal) {

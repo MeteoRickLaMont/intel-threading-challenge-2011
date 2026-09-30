@@ -367,29 +367,31 @@ std::string Position::legalDirs(BoardStats &t) const
 
     register tBmp prevmid, currmid, nextmid;
     tBmp rear0, rear1;
-    prevmid = currmid = nextmid = rear0 = rear1 = 0;
+
+    //
+    // A legal move can only land in bitmap columns xwdiv..xediv, so the
+    // secondary loop stops at xediv. Columns further right could only
+    // update neighbor-count state that no output step would consume.
+    //
+    tPos xlast = (xediv < gMaxX) ? xediv : gMaxX;
 
     for (ycurr = ynclamp; ycurr <= ysclamp; ++ycurr) {
         //
-        // Reset row pointers each iteration because the inner loop may
-        // break before consuming the rest of the row.
+        // Reset row pointers and middle bitmaps each iteration because
+        // the secondary loop stops before consuming the rest of the row.
+        // rear0 and rear1 need no reset: the xmid == -BMPSIZE iteration
+        // recomputes them before any output step reads them.
         //
         prev = (ycurr - 1 < 0) ? 0 : &fCells[(ycurr - 1) * gBoardWidth];
         curr = &fCells[ycurr * gBoardWidth];
         next = (ycurr == gMaxY) ? 0 : &fCells[(ycurr + 1) * gBoardWidth];
 
-        prevmid = currmid = nextmid = rear0 = rear1 = 0;
+        prevmid = currmid = nextmid = 0;
 
         //
-        // Secondary loop scans x from left to right. A legal move can
-        // only land on one of the three bitmap columns {xwdiv, xidiv,
-        // xediv}, so once xmid has passed xediv the remaining iterations
-        // can only update neighbor-count state that no output step will
-        // ever consume. Skip the rest of the row in that case.
+        // Secondary loop scans x from left to right
         //
-        for (tPos xmid = -BMPSIZE; xmid <= gMaxX; xmid += BMPSIZE) {
-            if (xmid > xediv)
-                break;
+        for (tPos xmid = -BMPSIZE; xmid <= xlast; xmid += BMPSIZE) {
             //
             // Set bitmaps prevfore, currfore and nextfore.
             // They are aligned vertically from top to bottom.
@@ -446,6 +448,14 @@ std::string Position::legalDirs(BoardStats &t) const
                 //
                 tBmp bmp = ~currmid & count1 &
                     ~count2a & ~count2b;        // Mask those with 4+ neighbors
+
+                //
+                // Clip bmp to right boundary. Otherwise a cell on the
+                // right edge could move east (or northeast/southeast)
+                // off the board.
+                //
+                if (xmid == gRightx)
+                    bmp &= gRightmask;
 
                 //
                 // If bmp is non-zero, examine it for 1 bits in
