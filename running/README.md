@@ -2,7 +2,7 @@
 
 ## Problem description
 
-Write code that receives an input in the size of 16 BYTEs and runs until all bytes are zero or repeat the original input bytes. Every cycle of the program a value is added to each BYTE separately. Every 37th cycle, the buffer is converted to four DWORDs and a value is added to each DWORD separately. For 38th cycle, the DWORD is converted back to 16 BYTEs and the addition process repeats (another 37 cycles each). Since addition of fixed size values is cyclic itself, after enough iterations through this process, the value of the array will either repeat the initial values or each becomes zero. The goal of your code is to compute the number of cycles required to reach all zero values simultaneously or detect the repetition of the original input values.
+Write code that receives an input in the size of 16 BYTEs and runs until all bytes are zero or repeat the original input bytes. Every cycle of the program a value is added to each BYTE separately. Every 37th cycle, the buffer is converted to four DWORDs and a value is added to each DWORD separately. For the 38th cycle, the DWORD is converted back to 16 BYTEs and the addition process repeats (another 37 cycles each). Since addition of fixed size values is cyclic itself, after enough iterations through this process, the value of the array will either repeat the initial values or each becomes zero. The goal of your code is to compute the number of cycles required to reach all zero values simultaneously or detect the repetition of the original input values.
 
 ## Correction
 
@@ -36,7 +36,7 @@ Rick LaMont scored 206.22 points with the fastest correct program on seven of th
 
 When I first read the Running Numbers problem description, it screamed "SSE". Meanwhile, the 37 cycle pattern whispered, "You have 40 cores. Use 37 threads to decompose it."
 
-Yet SSE and threading will only go so far when the basic algorithm is "grind it out". In order to go really fast one needs to optimze the algorithm.
+Yet SSE and threading will only go so far when the basic algorithm is "grind it out". In order to go really fast one needs to optimize the algorithm.
 
 **BASIC CONCEPTS**
 
@@ -55,7 +55,7 @@ More precisely, a solution was found in bucket 0 after 15,524,209 blocks. Note t
 
 **THREADING MODEL**
 
-Deompose the problem into 74 jobs. The first bank of 37 jobs seeks solutions where all bytes reach zero simultaneously. Each job focuses only on one bucket: job 0 takes bucket 0, job 1 takes bucket 1, and so on. Jobs 38 through 73 seek solutions where the bytes repeat their initial values, again with one job per bucket.
+Decompose the problem into 74 jobs. The first bank of 37 jobs seeks solutions where all bytes reach zero simultaneously. Each job focuses only on one bucket: job 0 takes bucket 0, job 1 takes bucket 1, and so on. Jobs 38 through 73 seek solutions where the bytes repeat their initial values, again with one job per bucket.
 
 Separating "zero" jobs from "repeat" jobs simplifies the problem. While it's possible that the same bucket will have both types of solutions, those two searches will lead in different directions (unless the initial values were all zeros).
 
@@ -205,13 +205,13 @@ Suppose the red dial is already in its target position of all bytes zero. The gr
         ncycles += delta
     report no solution found for this job
 ```
-The blue phase nearly identical except it skims bigger chunks, up to 65,536 blocks at a time:
+The blue phase is nearly identical except it skims bigger chunks, up to 65,536 blocks at a time:
 ```
     delta = greenPeriod * 37
     n = bluePeriod / greenPeriod
     while n-- > 0
         if blue dial of acc is in target position
-            proceed to blue phase
+            proceed to yellow phase
         acc = skim(greenPeriod)
         ncycles += delta
     report no solution found for this job
@@ -282,7 +282,7 @@ Define "probe" as any comparison between the accumulator and a full or partial g
     advance one cycle
     is this a solution?
 ```
-Probes are more expensive than steps, not becuase they use more instructions but because of the inherent branching. Barrel lock seeks to minimize probes. In the worst case a job would need:
+Probes are more expensive than steps, not because they use more instructions but because of the inherent branching. Barrel lock seeks to minimize probes. In the worst case a job would need:
 ```
     red phase:      9 probes
     green phase:  256 probes
@@ -304,7 +304,7 @@ The blue phase is the bottleneck due to the cost of skimming 64K blocks at a tim
 ```
 In a typical test with an "all bytes zero" solution, only two jobs will make it beyond the red phase. The other 72 jobs fail to launch, freeing up threads to work on other jobs.
 
-The two jobs that do launch are the one that ultimately finds the solution and job #73. You see, job 73 is the one that finds the inevitable repeat after 37 * yellowPeriod cycles. Unfortunately, it needs to take the maximum number of probes (776) to find it. My program includes a special early exit for job 73 if it appears to be bound for the maximum cycles.
+The two jobs that do launch are the one that ultimately finds the solution and job #73. You see, job 73 is the one that finds the inevitable repeat after 37 * yellowPeriod cycles. Unfortunately, it needs to take the maximum number of probes (777) to find it. My program includes a special early exit for job 73 if it appears to be bound for the maximum cycles.
 
 **PERFORMANCE**
 
@@ -411,7 +411,7 @@ Here's pseudocode for the simulation:
 ```
 So there's my winning solution. I think it's elegant in its simplicity. Just kidding!
 
-When I read the problem description, it screamed "Streaming SIMD Extentions" (SSE):
+When I read the problem description, it screamed "Streaming SIMD Extensions" (SSE):
 ```
 Q. 128 bit integer registers?
 A. SSE2

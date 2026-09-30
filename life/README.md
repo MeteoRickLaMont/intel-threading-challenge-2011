@@ -8,7 +8,7 @@ Write a threaded code to find a solution to an input instance of the Maze of Lif
 
 ## Input Description
 
-The input to the program will be from a text file named on the command line of the application. The first line will be two integers denoting the dimensions of the grid, number of rows and number of columns. For consistency and shared point of reference, the upper left corner of the grid will be at the (1 1) location. The second line of the file will be the coordinates of the goal grid point. The third line will be the initial coordinates of the intelligent cell. Remaining lines will be the coordinates of the remainder of the "alive" cells in the initial state of the game. Each line of the file will contain 10 integers with at least one space between each. These represent coordinate pairs of five alive nodes. A tag of two zeroes (0 0) denotes the end of the live cell coordinates. The exception for 10 integers per line will last line of the file which may have fewer than 5 coordinates and the tag.
+The input to the program will be from a text file named on the command line of the application. The first line will be two integers denoting the dimensions of the grid, number of rows and number of columns. For consistency and shared point of reference, the upper left corner of the grid will be at the (1 1) location. The second line of the file will be the coordinates of the goal grid point. The third line will be the initial coordinates of the intelligent cell. Remaining lines will be the coordinates of the remainder of the "alive" cells in the initial state of the game. Each line of the file will contain 10 integers with at least one space between each. These represent coordinate pairs of five alive nodes. A tag of two zeroes (0 0) denotes the end of the live cell coordinates. The exception for 10 integers per line will be the last line of the file which may have fewer than 5 coordinates and the tag.
 
 ## Key files in this directory
 
@@ -19,7 +19,7 @@ The input to the program will be from a text file named on the command line of t
 
 The 2020 and 2023 rewrites share helper files [board.cpp](board.cpp), [parser.cpp](parser.cpp), and [scanner.cpp](scanner.cpp).
 
-## Notes on implemenations and scoring
+## Notes on implementations and scoring
 
 It was announced in advance that scoring would be based on program speed and that a bonus was available for programs that found the optimal (shortest) path. Some inferred the weighting would be 80% speed and 20% optimal. It came as a shock when the points for finding the optimal solution was equal to the points for coming in first place. It was essentially 50% speed and 50% optimal except only one competitor could come in first place whereas the full bonus for optimal path could be awarded to all competitors regardless of speed.
 
@@ -38,7 +38,7 @@ Miguel's approach was to adapt the [A* search algorithm](https://en.wikipedia.or
 Rick LaMont's solution was based on the lesser known paper [Parallel Best-N Block-First (PBNF) by Ethan Burns et al. (2009)](https://www.cs.unh.edu/~sna4/papers/pbnf-socs-09.pdf). The basic concept is a "zone defense" where each thread works on a different part of the board to minimize contention and locks. Starting 12 days late on a 21 day project, Rick never got it to the point where adding more threads made it go faster.
 
 With the benefit of hindsight of the ten test cases and how it would be scored, Rick set out to write a new solution that would build upon the best elements of his and Miguel's submissions. Here are the main improvements he made:
-* Miguel had the right idea with the A* algorithm but drop the closed set. With a constantly changing graph, the odds of repeating a previous board position a too low to merit consideration.
+* Miguel had the right idea with the A* algorithm, but the implementation was refined to omit the closed set. With a constantly changing graph, the odds of repeating a previous board position are too low to merit consideration.
 * Rick had the right game board data structure except it was designed for large, sparse boards. Change it to fixed height and width. Do not skip over empty vertical or horizontal areas.
 * Loading the input data file is a bottleneck. Use a custom algorithm to parse positive integers quickly.
 * Exit immediately when solution is found. Don't wait for threads to join.
@@ -60,10 +60,10 @@ For optimal paths a completely different algorithm is called for. In beam.cpp we
 
 I almost hate to talk about Maze of Life because it was such an interesting problem and my solution had potential but regrettably did not scale to multiple threads. Part of my difficulty stemmed from getting a late start on the contest and only having 9 days to complete Maze of Life. Working the full 21 days really helps on any problem.
 
-My top level design is analagous to a chess-playing program in that you need three things:
+My top level design is analogous to a chess-playing program in that you need three things:
 1. A compact representation of board positions;
 2. A way to quickly generate new positions; and
-3. A payoff function to evaluate the quality of a postion.
+3. A payoff function to evaluate the quality of a position.
 
 To address the first two requirements I turned to the substantial body of literature on Game of Life programs. My data structure is "sparse" in that it only represents regions that contain living cells. Each cell is represented by a bit (0 = dead, 1 = alive) in a 64 bit integer which, in turn, covers a horizontal run of 64 cells. Advancing one generation in the Game of Life uses bitwise operations to process 64 cells in parallel.
 
@@ -94,7 +94,7 @@ All attempts to multithread this thing only made it slower. The more threads I s
 
 My first attempt at multi-threading simply protected the heap with a mutex and turned all the threads loose on the main loop. When that failed, I assumed it was due to contention for the mutex.
 
-After a series of other failures, I found a paper on Parallel Best NBlock First by Ethan Burns et al. PBNF is a clever algorithm that can be appliesd to Maze of Life. I won't cover the whole thing but recommend reading the paper(s).
+After a series of other failures, I found a paper on Parallel Best NBlock First by Ethan Burns et al. PBNF is a clever algorithm that can be applied to Maze of Life. I won't cover the whole thing but recommend reading the paper(s).
 
 The basic idea is that the game grid is divided into equal-sized rectangular zones (typically squares), say of size 8x8 cells. Each thread stakes out a zone and only processes positions where the intelligent cell is in its own zone. The active zones are spaced sufficiently far apart so that if the intelligent cell moves out of one thread's zone, it will enter a passive zone (i.e. one not currently being processed by a thread). This precludes the need for mutexes on most data structures. Periodically each thread checks to see if there is a more promising zone that it should be working on.
 

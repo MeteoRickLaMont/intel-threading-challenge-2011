@@ -8,7 +8,7 @@ Write a threaded code to find the sum of all possible "k-pair" consecutive prime
 
 ## Correction
 
-On the contest forum, clarification was sought on whether it was allowable for submissions to include a data file with all the prime numbers precomputed. The answer was no, that's not what the officials had envisioned. A followup question pointed out that many algorithms for calculating primes relied on a small "seed set" of prime numbers such as {2, 3, 5}. Would this be allowed or must submissions start from a blank slate. The judges drew a line somewhere (200 primes?) and posted their decision on the forum.
+On the contest forum, clarification was sought on whether it was allowable for submissions to include a data file with all the prime numbers precomputed. The answer was no, that's not what the officials had envisioned. A followup question pointed out that many algorithms for calculating primes relied on a small "seed set" of prime numbers such as {2, 3, 5}. Would this be allowed or must submissions start from a blank slate? The judges drew a line somewhere (200 primes?) and posted their decision on the forum.
 
 Unfortunately, not everyone got the memo. One very active competitor named "lazydodo" worked hard on his submission only to later find out that it would likely be disqualified for using precomputed primes. The officials reconsidered and decided to reward submissions that did not make use of extensive prime tables with 25 bonus points.
 
@@ -16,7 +16,7 @@ Unfortunately, not everyone got the memo. One very active competitor named "lazy
 
 The input to the program will be from the command line as three integers. The first and second integers will be the start and the end, inclusive, of the range from which prime numbers must be used. The third command line parameter is the maximum power m, which the application must use to compute perfect powers. The input values will be represented with 32-bit unsigned integers. The fourth parameter on the command-line would be the name of the text file to hold the output.
 
-Example command line: `./primesums 1 29 6 sumsout.txt`z
+Example command line: `./primesums 1 29 6 sumsout.txt`
 
 ## Output description
 
@@ -63,7 +63,7 @@ The second round (Consecutive Primes) has closed and I like my chances for winni
 
 The rest of this message will be technical. Read on only if you understand programming and/or want a rare glimpse of my source code.
 
-The problem I had to solve is simple to describe. Consider a run of k consecutive primes, such as [11083, 11087, 11093]. Is their sum a perfect power? (A number n is a perfect power if it can be expressed as n = mx where m and x are natural numbers greater than 1.) For example, 2 + 3 + 5 + 7 + 11 + 13 + 17 + 19 + 23 = 100 which is a perfect power because 102 = 100. Got it?
+The problem I had to solve is simple to describe. Consider a run of k consecutive primes, such as [11083, 11087, 11093]. Is their sum a perfect power? (A number n is a perfect power if it can be expressed as n = mx where m and x are natural numbers greater than 1.) For example, 2 + 3 + 5 + 7 + 11 + 13 + 17 + 19 + 23 = 100 which is a perfect power because 10<sup>2</sup> = 100. Got it?
 
 My program took as input two 32-bit integers representing the start and end of a range to consider. It then had to find all possible sub-runs of consecutive primes in the range that sum to a perfect power. For example, on the input [1, 29] it would print (in no particular order):
 ```
